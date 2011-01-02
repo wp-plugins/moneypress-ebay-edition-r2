@@ -11,7 +11,7 @@ if (function_exists('curl_init') === false) {
     throw new PanhandlerMissingRequirement("cURL must be installed to use eBayPanhandler");
 }
 
-final class eBayPanhandler implements Panhandles {
+final class eBayDriver implements Panhandles {
 
     //// PRIVATE MEMBERS ///////////////////////////////////////
 
@@ -30,7 +30,9 @@ final class eBayPanhandler implements Panhandles {
      */
     private $supported_options = array(
         'affiliate_info',
+        'product_count',
         'keywords',
+        'category_id',
         'sellers',
         'sort_order',
     );
@@ -88,8 +90,13 @@ final class eBayPanhandler implements Panhandles {
      * We have to pass in the AppID that eBay gives us, as we need
      * this to fetch product information.
      */
-    public function __construct($app_id) {
-        $this->app_id = $app_id;
+    public function __construct($options) {
+        // Set the properties of this object based on 
+        // the named array we got in on the constructor
+        //
+        foreach ($options as $name => $value) {
+            $this->$name = $value;
+        }        
     }
 
     //// INTERFACE METHODS /////////////////////////////////////
@@ -102,12 +109,14 @@ final class eBayPanhandler implements Panhandles {
     }
 
     public function get_products($options = null) {
-        foreach (array_keys($options) as $name) {
-            if (in_array($name, $this->supported_options) === false) {
-                throw new PanhandlerNotSupported("Received unsupported option $name");
+        if ($options) {
+            foreach (array_keys($options) as $name) {
+                if (in_array($name, $this->supported_options) === false) {
+                    throw new PanhandlerNotSupported("Received unsupported option $name");
+                }
             }
         }
-
+    
         $this->parse_options($options);
 
         return $this->extract_products(
@@ -123,16 +132,21 @@ final class eBayPanhandler implements Panhandles {
         $this->results_page = $page_number;
     }
 
+    public function set_default_option_values($options) {
+        $this->parse_options($options);
+    }
+
+
     //// PRIVATE METHODS ///////////////////////////////////////
 
     /**
      * Called by the interface methods which take an $options hash.
      * This method sets the appropriate private members of the object
      * based on the contents of hash.  It looks for the keys in
-     * $supported_options * and assigns the value to the private
-     * members with the same names.  See the documentation for each of
-     * those members for a description of their acceptable values,
-     * which this method does not try to enforce.
+     * $supported_options and assigns the value to the private members
+     * with the same names.  See the documentation for each of those
+     * members for a description of their acceptable values, which
+     * this method does not try to enforce.
      *
      * Returns no value.
      */
@@ -142,6 +156,10 @@ final class eBayPanhandler implements Panhandles {
                 $this->$name = $options[$name];
             }
         }
+
+        if (is_array($this->keywords) === false) {
+            $this->keywords = preg_split('/[\s,]+/', $this->keywords);
+        }
     }
 
     /**
@@ -149,6 +167,11 @@ final class eBayPanhandler implements Panhandles {
      * order to get product information.
      */
     private function make_request_url() {
+        
+        if ($this->product_count) {
+            self::set_maximum_product_count($this->product_count);
+        }
+        
         $options = array(
             'OPERATION-NAME'       => 'findItemsAdvanced',
             'SERVICE-VERSION'      => '1.0.0',
@@ -166,10 +189,14 @@ final class eBayPanhandler implements Panhandles {
         if ($this->sort_order) {
             $options['sortOrder'] = $this->sort_order;
         }
+        
+        if ($this->category_id) {
+            $options['categoryId'] = $this->category_id;
+        }
 
         $options = $this->apply_filters($options);
         $options = $this->apply_affiliate_info($options);
-
+        
         return sprintf(
             "%s?%s",
             $this->ebay_service_url,
@@ -207,10 +234,7 @@ final class eBayPanhandler implements Panhandles {
     private function apply_filters($options) {
         if ($this->sellers) {
             $options['itemFilter(0).name'] = 'Seller';
-
-            for ($i = 0; $i < count($this->sellers); $i++) {
-                $options["itemFilter(0).value($i)"] = $this->sellers[$i];
-            }
+            $options["itemFilter(0).value(0)"] = $this->sellers;
         }
 
         return $options;
@@ -262,8 +286,8 @@ final class eBayPanhandler implements Panhandles {
     private function create_description($item) {
         return sprintf(
             '<ul>
-               <li>Buy it Now: %s</li>
-               <li>Number of Bids: %d</li>
+               <li>' . __('Buy it Now',$this->prefix) . ': %s</li>
+               <li>' . __('Number of Bids',$this->prefix) . ': %d</li>
              </ul>',
             ((string) $item->listingInfo->buyItNowAvailable === 'true') ? 'Yes' : 'No',
             (string) $item->listingInfo->bidCount

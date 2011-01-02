@@ -4,8 +4,6 @@
 
  /* Copyright (C) 2010 Cyber Sprocket Labs <info@cybersprocket.com>         */
 
- /* Authors: Eric James Michael Ritz <Eric@cybersprocket.com>               */
-
  /* This program is free software; you can redistribute it and/or           */
  /* modify it under the terms of the GNU General Public License             */
  /* as published by the Free Software Foundation; either version 3          */
@@ -44,11 +42,11 @@ final class PanhandlerProduct {
 
 /**
  * This is an extremely simple class that basically serves as an easy
- * way of detecting returned errors by using is_a(). Constructor takes
- * a single param which should be a string containting the error
- * message.
+ * way of detecting returned errors by using try-catch
+ * blocks. Constructor takes a single param which should be a string
+ * containting the error message.
  */
-class PanhandlerError {
+class PanhandlerError extends Exception {
   public $message;
 
   public function __construct($message) {
@@ -58,8 +56,8 @@ class PanhandlerError {
 
 /**
  * Any driver which does not implement a method of the Panhandles
- * interface should throw this exception with an appropriate error
- * message.
+ * interface, or does not recognize a driver option given to it,
+ * should throw this exception with an appropriate error message.
  */
 class PanhandlerNotSupported extends PanhandlerError {}
 
@@ -98,6 +96,23 @@ interface Panhandles {
     public function get_supported_options();
 
     /**
+     * This function takes a hash containing default values to apply
+     * to driver options.  The keys of this hash must be elements
+     * found in the results of calling get_supported_options().  The
+     * values are those to be used if the options are not explicitly
+     * given values in the arguments to get_products().
+     *
+     * In a situation where a driver option has a default value and
+     * has a value in the parameter to get_products(), the value given
+     * to get_products() must take priority.
+     *
+     * Drivers are encouraged to throw a PanhandlerNotSupported
+     * exception if they are given default values for options they do
+     * not recognize.
+     */
+    public function set_default_option_values($options);
+
+    /**
      * Sets the maximum number of products to return from any method.
      * Any method which returns a collection of PanhandlerProduct
      * objects must not return more than the value given by this
@@ -122,5 +137,3 @@ interface Panhandles {
     public function set_results_page($page_number);
 
 }
-
-?>
