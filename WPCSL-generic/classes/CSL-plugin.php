@@ -1,62 +1,105 @@
 <?php
-define('WPCSL__mpebay__VERSION', '1.4');
+/************************************************************************
+*
+* file: CSL-plugin.php
+*
+* The main Cyber Sprocket library for communicating effectively with 
+* WordPress.   This class manages the related helper classes so we can 
+* share a code libary and reduce code redundancy.
+* 
+************************************************************************/
+define('WPCSL__mpebay__VERSION', '1.4.14');
 
-require_once('CSL-settings_class.php');
-require_once('CSL-notifications_class.php');
-require_once('CSL-license_class.php');
+// (LC) 
+// These helper files should only be loaded if needed by the plugin
+// that is asking for WPCSL-Generic services.
+//
+// Wrap inside the init and check the class properties first?
+// 
 require_once('CSL-cache_class.php');
+require_once('CSL-helper_class.php');
+require_once('CSL-license_class.php');
+require_once('CSL-notifications_class.php');
+require_once('CSL-products_class.php');
+require_once('CSL-settings_class.php');
+require_once('CSL-themes_class.php');
 
-/**
- * This class does most of the heavy lifting for creating a plugin.
- * It takes a hash as its one constructor argument, which can have the
- * following keys and values:
- *
- *     * 'name' :: The name of the plugin.
- *
- *     * 'prefix' :: A string used to prefix all of the Wordpress
- *       settings for the plugin.
- *
- *     * 'url' :: The URL for the product page at Cyber Sprocket Labs.
- *
- *     * 'support_url' :; The URL for the support page at Cyber Sprocket Labs
- *
- *     * 'purchase_url' :: The URL for purchasing the plugin
- *
- *     * 'basefile' :: Path and filename of main plugin file. Needed so wordpress
- *       can tell which plugin is calling some of it's generic hooks.
- *
- *     * 'driver_defaults' :: A hash where the keys are the names of
- *       support options for a Panhandler driver, and the values are
- *       the names of Wordpress settings which will provide the
- *       default values for those driver options.  See the method
- *       'get_supported_options()' in the Panhandler code for a
- *       description of driver options.  The names of the settings
- *       should not include the prefix, i.e. write:
- *
- *           'driver_defaults' => array(
- *               'keywords' => 'keywords'
- *           )
- *
- *       instead of
- *
- *           'driver_defaults' => array(
- *               'keywords' => 'csl-mp-ebay-keywords'
- *           )
- *
- */
+
+/*****************************************************************************
+* Class: WPCSL_plugin
+*
+* This class does most of the heavy lifting for creating a plugin.
+* It takes a hash as its one constructor argument, which can have the
+* following keys and values:
+*
+*     * 'basefile' :: Path and filename of main plugin file. Needed so wordpress
+*               can tell which plugin is calling some of it's generic hooks.
+*
+*     * 'css_prefix' :: The prefix to add to CSS classes, use 'csl_theme' to
+*               enable generic themes.
+*
+*     * 'driver_defaults' :: A hash where the keys are the names of
+*       support options for a Panhandler driver, and the values are
+*       the names of Wordpress settings which will provide the
+*       default values for those driver options.  See the method
+*       'get_supported_options()' in the Panhandler code for a
+*       description of driver options.  The names of the settings
+*       should not include the prefix, i.e. write:
+*
+*           'driver_defaults' => array(
+*               'keywords' => 'keywords'
+*           )
+*
+*       instead of
+*
+*           'driver_defaults' => array(
+*               'keywords' => 'csl-mp-ebay-keywords'
+*           )
+*
+*     * 'name' :: The name of the plugin.
+*
+*     * 'prefix' :: A string used to prefix all of the Wordpress
+*       settings for the plugin.
+*
+*     * 'support_url' :; The URL for the support page at Cyber Sprocket Labs
+*
+*     * 'purchase_url' :: The URL for purchasing the plugin
+*
+*     * 'url' :: The URL for the product page at Cyber Sprocket Labs.
+*
+*     * 'has_packages' :: defaults to false, if true that means the main product is
+*       not licensed but we still need the license class to manage add-ons.
+*
+*/
 class wpCSL_plugin__mpebay {
 
+    /**-------------------------------------
+     **/
     function __construct($params) {
 
         // These settings can be overridden
         //
-        $this->no_license  = false;
-        $this->driver_type = 'Panhandler';
+        $this->no_license       = false;
+        $this->themes_enabled   = false;
+        $this->columns          = 1;
+        $this->driver_type      = 'Panhandler';
+        $this->css_prefix       = '';
+        $this->sku              = '';
+        $this->uses_money       = true;
+        $this->has_packages     = false;
 
         // Do the setting override or initial settings.
         //
         foreach ($params as $name => $value) {
             $this->$name = $value;
+        }
+        
+        // Debugging Flag
+        $this->debugging = (get_option($this->prefix.'-debugging') == 'on');
+        
+        // What prefix do we add to the CSS elements?
+        if ($this->css_prefix == '') {
+            $this->css_prefix = $this->prefix;
         }
 
         // Store the license option here to prevent
@@ -78,40 +121,64 @@ class wpCSL_plugin__mpebay {
         }
         if ( class_exists( 'WP_Http' ) ) {
             $this->http_handler = new WP_Http;
+        } else if ($this->debugging) {
+            print "WordPress HTTP Handler is not available.<br/>\n";
         }
 
         // Debugging Flag
-        $this->debugging = get_option($this->prefix.'-debugging');
+        $this->debugging = (get_option($this->prefix.'-debugging') == 'on');
 
         $this->notifications_config = array(
             'prefix' => $this->prefix,
             'name' => $this->name,
             'url' => 'options-general.php?page='.$this->prefix.'-options',
         );
+        
+        $this->products_config = array(
+            'prefix'            => $this->prefix,
+            'css_prefix'        => $this->css_prefix,
+            'columns'           => $this->columns,
+         );
 
         $this->settings_config = array(
             'prefix'            => $this->prefix,
+            'css_prefix'        => $this->css_prefix,
             'plugin_url'        => $this->plugin_url,
             'name'              => $this->name,
             'url'               => $this->url,
             'paypal_button_id'  => $this->paypal_button_id,
-            'no_license'        => $this->no_license
-        );
-
-        $this->license_config = array(
-            'prefix'        => $this->prefix,
-            'http_handler'  => $this->http_handler
+            'no_license'        => $this->no_license,
+            'sku'               => $this->sku,
+            'has_packages'      => $this->has_packages,
+            'parent'            => $this
+            
         );
 
         $this->cache_config = array(
             'prefix' => $this->prefix,
             'path' => $this->cache_path
         );
+        
+        if ($this->has_packages || !$this->no_license) {
+            $this->license_config = array(
+                'prefix'        => $this->prefix,
+                'http_handler'  => $this->http_handler,
+                'sku'           => $this->sku,
+                'has_packages'  => $this->has_packages
+            );
+        }            
+
+        $this->themes_config = array(
+            'prefix'        => $this->prefix,
+            'plugin_path'   => $this->plugin_path,
+            'plugin_url'    => $this->plugin_url,  
+            'support_url'   => $this->support_url
+        );
 
         $this->initialize();
     }
 
-    /***********************************************
+    /**-------------------------------------
      ** method: ok_to_show
      **
      ** returns true if... 
@@ -122,41 +189,53 @@ class wpCSL_plugin__mpebay {
      **/
     function ok_to_show() {
         global $current_user;
-        $ok = false;
 
         // this instantiation already knows we're licensed
         if ($this->purchased) { 
             return true; // Short circuit, no need to set this again below
-            
-        // Licensing is not enabled
-        //
-        } else if ($this->no_license) {
-            $ok = true;      
-            
+
         // purchase already recorded
-        } else if (get_option($this->prefix.'-purchased'))  { 
-            $ok = true; 
+        } else if (get_option($this->prefix.'-purchased') == '1')  { 
+            $this->purchased = true;
+            return true;
 
         // user is an admin
-        } else if (isset($current_user) && ($current_user->ID > 0) &&
-            current_user_can('administrator')) {
-            $ok = true;
+        } else if (current_user_can('administrator')) {
+            $this->purchased = true;
+            return true;
 
         // purchase not recorded - recheck it on the server
-        } else if ($this->license->check_license_key)      { 
-            $ok = true; 
+        } else if ($this->no_license || $this->license->check_license_key())      { 
+            $this->purchased = true;
+            return true;
         }
 
+        // We are not running a licensed copy
+        // show the reason via debugging        
+        if ($this->debugging) {
+            print "Purchased flag: " . get_option($this->prefix.'-purchased') . "<br/>\n";
+            if (!isset($current_user)) {
+                print "Current user is not set.<br/>\n";
+            } else {
+                print "Current User ID: " . $current_user->ID . "<br/>\n";
+                if ($current_user->ID > 0) {
+                    print "Capabilities:<pre>\n";
+                    print_r($current_user->wp_capabilities);
+                    print "</pre>\n";
+                } else {
+                    print "You are not logged in.<br/>\n";
+                }                    
+            }
+        }
 
-        $this->purchased = $ok;     // Set our memory of this
-        return $ok;                 // And tell our "callers"
+        return false;                 // And tell our "callers"    
     }
 
-    /***********************************************
-     * Method: CSL_ARRAY_FILL_KEYS
-     * Our own version of the php5.2 array_fill_keys
-     * So we can hopefully stay with php5.1 compatability
-     */
+    /**-------------------------------------
+     ** Method: CSL_ARRAY_FILL_KEYS
+     ** Our own version of the php5.2 array_fill_keys
+     ** So we can hopefully stay with php5.1 compatability
+     **/
     function csl_array_fill_keys($target,$value='') {
         if(is_array($target)) {
             foreach($target as $key => $val) {
@@ -165,8 +244,29 @@ class wpCSL_plugin__mpebay {
         }
         return $filledArray;
     }
+    
 
-    /***********************************************
+    /**-------------------------------------
+     ** method: create_helper
+     **
+     ** Instantiates the helper class and attaches it to an instantiation
+     ** of this class.
+     **
+     **/
+    function create_helper($class = 'none') {
+        switch ($class) {
+            case 'none':
+                break;
+
+            case 'wpCSL_helper__mpebay':
+            case 'default':
+            default:
+                $this->helper = new wpCSL_helper__mpebay();
+
+        }
+    }    
+
+    /**-------------------------------------
      ** method: create_notifications
      **/
     function create_notifications($class = 'none') {
@@ -181,6 +281,25 @@ class wpCSL_plugin__mpebay {
                     new wpCSL_notifications__mpebay($this->notifications_config);
         }
     }
+    
+   
+    /**-------------------------------------
+     ** method: create_products
+     **/
+    function create_products($class = 'none') {
+        switch ($class) {
+            case 'none':
+                break;
+
+            case 'wpCSL_products__mpebay':
+            case 'default':
+            default:
+                $this->products = new wpCSL_products__mpebay($this->products_config);
+
+        }
+    }
+    
+
 
     /***********************************************
      ** method: create_settings
@@ -198,7 +317,25 @@ class wpCSL_plugin__mpebay {
         }
     }
 
-    /***********************************************
+   
+    /**-------------------------------------
+     ** method: create_themes
+     **/
+    function create_themes($class = 'none') {
+        switch ($class) {
+            case 'none':
+                break;
+
+            case 'wpCSL_products__mpebay':
+            case 'default':
+            default:
+                $this->themes = new wpCSL_themes__mpebay($this->themes_config);
+
+        }
+    }    
+    
+
+    /**-------------------------------------
      ** method: create_license
      **/
     function create_license($class = 'none') {
@@ -209,14 +346,14 @@ class wpCSL_plugin__mpebay {
             case 'wpCSL_license__mpebay':
             case 'default':
             default:
-                if (!$this->no_license) {
+                if ($this->has_packages || !$this->no_license) {
                     $this->license = new wpCSL_license__mpebay($this->license_config);
                 }
 
         }
     }
 
-    /***********************************************
+    /**-------------------------------------
      ** method: create_cache
      **/
     function create_cache($class = 'none') {
@@ -232,7 +369,7 @@ class wpCSL_plugin__mpebay {
         }
     }
 
-    /***********************************************
+    /**-------------------------------------
      ** method: create_options_page
      **/
     function create_options_page() {
@@ -248,30 +385,52 @@ class wpCSL_plugin__mpebay {
         );
     }
 
-    /***********************************************
+    /**-------------------------------------
      ** method: create_objects
      **/
     function create_objects() {
         if (isset($this->use_obj_defaults) && $this->use_obj_defaults) {
+            $this->create_helper('default');
             $this->create_notifications('default');
+            $this->create_products('default');
             $this->create_settings('default');
-            $this->create_license('default');
+            if ($this->has_packages || !$this->no_license) { $this->create_license('default'); }
             $this->create_cache('default');
+            $this->create_themes('default'); 
         } else {
+            if (isset($this->helper_obj_name))
+                $this->create_helper($this->helper_obj_name);
             if (isset($this->notifications_obj_name))
                 $this->create_notifications($this->notifications_obj_name);
+            if (isset($this->products_obj_name))
+                $this->create_products($this->products_obj_name);
             if (isset($this->settings_obj_name))
                 $this->create_settings($this->settings_obj_name);
-            if (isset($this->license_obj_name))
+            if (($this->has_packages || !$this->no_license) && isset($this->license_obj_name))
                 $this->create_license($this->license_obj_name);
             if (isset($this->cache_obj_name))
                 $this->create_cache($this->cache_obj_name);
+            if (isset($this->themes_obj_name))
+                $this->create_themes($this->themes_obj_name);
         }
     }
 
     /***********************************************
      ** method: add_refs
      ** What did you say? Refactoring what now? I don't know what that is
+     **
+     ** This connects the instantiated objects of other classes that are
+     ** properties of the main CSL-plugin class to each other.  For example
+     ** it ensures each of the other classes can access the notification
+     ** object for the main plugin.
+     **
+     ** settings    <= notifications, license, cache, themes
+     ** themes      <= settings, notifications, products
+     ** cache       <= settings, notifications
+     ** helper      <= notifications
+     ** license     <= notifications
+     ** products    <= notifications
+     **
      **/
     function add_refs() {
         // Notifications doesn't require any other objects yet
@@ -284,6 +443,8 @@ class wpCSL_plugin__mpebay {
                 $this->settings->license = &$this->license;
             if (isset($this->cache) && !isset($this->settings->cache))
                 $this->settings->cache = &$this->cache;
+            if (isset($this->themes) && !isset($this->settings->themes))
+                $this->settings->themes = &$this->themes;
         }
 
         // Cache
@@ -294,15 +455,38 @@ class wpCSL_plugin__mpebay {
                 $this->cache->notifications = &$this->notifications;
         }
 
+        // Helper
+        if (isset($this->helper)) {
+            if (isset($this->helper) && !isset($this->helper->notifications))
+                $this->helper->notifications = &$this->notifications;
+        }
+        
         // License
-        if (isset($this->license)) {
-            if (isset($this->notifications) && !isset($this->license->notifications))
-                $this->license->notifications = &$this->notifications;
+        if ($this->has_packages || !$this->no_license) { 
+            if (isset($this->license)) {
+                if (isset($this->notifications) && !isset($this->license->notifications))
+                    $this->license->notifications = &$this->notifications;
+            }
         }
 
+        // Products
+        if (isset($this->products)) {
+            if (isset($this->products) && !isset($this->products->notifications))
+                $this->products->notifications = &$this->notifications;
+        }
+        
+        // Themes
+        if (isset($this->themes)) {
+            if (isset($this->themes) && !isset($this->themes->notifications))
+                $this->themes->notifications = &$this->notifications;
+            if (isset($this->settings) && !isset($this->themes->settings))            
+                $this->themes->settings = &$this->settings;
+            if (isset($this->products) && !isset($this->themes->products))            
+                $this->themes->products = &$this->products;
+        }
     }
 
-    /***********************************************
+    /**-------------------------------------
      ** method: initialize
      **/
     function initialize() {
@@ -313,7 +497,7 @@ class wpCSL_plugin__mpebay {
         $this->add_wp_actions();
     }
 
-    /***********************************************
+    /**-------------------------------------
      ** method: add_wp_actions
      **
      ** What we do when WordPress is initializing actions
@@ -324,13 +508,15 @@ class wpCSL_plugin__mpebay {
     function add_wp_actions() {
         if ( is_admin() ) {
             add_action('admin_menu', array($this, 'create_options_page'));
-            add_action('admin_init', array($this, 'admin_init'));
-            add_action('admin_notices', array($this->notifications, 'display'));
+            add_action('admin_init', array($this, 'admin_init'),50);
+            add_action('admin_notices', array($this->notifications, 'display'));          
         } else {
-            // non-admin enqueues, actions, and filters
-            add_action('wp_head', array($this, 'checks'));
-            add_filter('wp_print_scripts', array($this, 'user_header_js'));
-            add_filter('wp_print_styles', array($this, 'user_header_css'));
+            if (!$this->themes_enabled) {
+                // non-admin enqueues, actions, and filters
+                add_action('wp_head', array($this, 'checks'));
+                add_filter('wp_print_scripts', array($this, 'user_header_js'));
+                add_filter('wp_print_styles', array($this, 'user_header_css'));
+            }
         }
 
         add_filter('plugin_row_meta', array($this, 'add_meta_links'), 10, 2);
@@ -341,10 +527,20 @@ class wpCSL_plugin__mpebay {
             if (isset($this->shortcodes)) {
                 if (is_array($this->shortcodes)) {
                     foreach ($this->shortcodes as $shortcode) {
+                        $shortcode_lc = strtolower($shortcode);
+                        $shortcode_uc = strtoupper($shortcode);
                         add_shortcode($shortcode, array($this, 'shortcode_show_items'));
+                        add_shortcode($shortcode_lc, array($this, 'shortcode_show_items'));
+                        add_shortcode($shortcode_uc, array($this, 'shortcode_show_items'));
                     }
-                } else add_shortcode($this->shortcodes, array($this, 'shortcode_show_items'));
-            }
+                } else {
+                        $shortcode_lc = strtolower($shortcode);
+                        $shortcode_uc = strtoupper($shortcode);
+                        add_shortcode($shortcode, array($this, 'shortcode_show_items'));
+                        add_shortcode($shortcode_lc, array($this, 'shortcode_show_items'));
+                        add_shortcode($shortcode_uc, array($this, 'shortcode_show_items'));
+                }
+            } 
 
             // Automatic shortcodes
             // This should cover any basic typos involving dashes or underscores
@@ -352,30 +548,37 @@ class wpCSL_plugin__mpebay {
             add_shortcode($this->prefix.'_show_items', array($this, 'shortcode_show_items'));
             add_shortcode($this->prefix.'-show-items', array($this, 'shortcode_show_items'));
             add_shortcode($this->prefix.'-show_items', array($this, 'shortcode_show_items'));
+            
+        // No Driver
+        //
+        } else {
+            if (($this->debugging) && ($this->driver_type != 'none')) {
+                print __('DEBUG: No driver found.', $this->prefix);
+            }
         }
     }
 
-    /***********************************************
+    /**-------------------------------------
      ** method: add_meta_links
      **/
     function add_meta_links($links, $file) {
 
         if ($file == $this->basefile) {
-            $links[] = '<a href="options-general.php?page='.$this->prefix.'-options" title="'.
-                            __('Settings') . '">'.__('Settings') . '</a>';
             if (isset($this->support_url)) {
                 $links[] = '<a href="'.$this->support_url.'" title="'.__('Support') . '">'.
                             __('Support') . '</a>';
             }
             if (isset($this->purchase_url)) {
                 $links[] = '<a href="'.$this->purchase_url.'" title="'.__('Purchase') . '">'.
-                            __('Purchase') . '</a>';
+                            __('Buy Now') . '</a>';
             }
+            $links[] = '<a href="options-general.php?page='.$this->prefix.'-options" title="'.
+                            __('Settings') . '">'.__('Settings') . '</a>';
         }
         return $links;
     }
 
-    /***********************************************
+    /**-------------------------------------
      ** method: admin_init
      **
      ** What we do whenever an admin page is initialized.
@@ -388,7 +591,7 @@ class wpCSL_plugin__mpebay {
         $this->checks();
     }
 
-    /***********************************************
+    /**-------------------------------------
      ** method: checks
      **/
     function checks() {
@@ -396,13 +599,13 @@ class wpCSL_plugin__mpebay {
             $this->cache->check_cache();
         }
 
-        if (isset($this->license)) {
+        if (!$this->has_packages && isset($this->license)) {
             $this->license->check_product_key();
         }
     }
 
 
-    /***********************************************
+    /**-------------------------------------
      ** method: load_driver
      **
      **
@@ -480,99 +683,88 @@ class wpCSL_plugin__mpebay {
         }
     }
 
-    /**
-     * Function: add_display_settings
+    /**-------------------------------------
+     * method: add_display_settings
      *
+     * Add the display settings section to the admin panel.
      *
      **/
-    function add_display_settings() {
+    function add_display_settings() {         
+        $this->settings->add_section(array(
+                'name' => __('Display Settings',$this->prefix),
+                'description' => '',
+                'start_collapsed' => true
+            )
+        );
+        
+        if ($this->themes_enabled) {
+            $this->themes->add_admin_settings();
+        }
+        
+        
         if (get_option($this->prefix.'-locale')) {
             setlocale(LC_MONETARY, get_option($this->prefix.'-locale'));
         }
 
-        $this->settings->add_section(array(
-                'name' => 'Display Settings',
-                'description' => ''
-            )
-        );
-        if (exec('locale -a', $locales)) {
-            $locale_custom = '';
-
-            foreach ($locales as $locale) {
-                $locale_custom .= "<option".((get_option($this->prefix.'-locale') == $locale) ? ' selected' : '').">$locale</option>\n";
+        // If we have an exec function and get locales, show the pulldown.
+        //        
+        if (function_exists('exec')) {
+            if (exec('locale -a', $locales)) {
+                $locale_custom = array();
+    
+                foreach ($locales as $locale) {
+                    $locale_custom[$locale] = $locale;
+                }
+    
+                $this->settings->add_item(
+                    'Display Settings', 
+                    'Locale', 
+                    'locale', 
+                    'list', 
+                    false, 
+                    __('Sets the locale for PHP program processing, affects time and currency processing. '.
+                        'If you change this, save settings and then select money format.',$this->prefix),
+                    $locale_custom
+                );
             }
-
-            $this->settings->add_item('Display Settings', 'Locale', $this->prefix.'-locale', 'custom', false, null,
-                "<select name=\"{$this->prefix}-locale\">
-                                 $locale_custom
-                                 </select>"
-            );
+        } else {
+                $this->settings->add_item(
+                    'Display Settings', 
+                    'Locale', 
+                    'locale', 
+                    null, 
+                    false, 
+                    __('Your PHP settings have disabled exec(), your locale list cannot be determined.',$this->prefix),
+                    '&nbsp;'
+                );
         }
 
-        if (function_exists('money_format')) {
-            $this->settings->add_item('Display Settings', 'Money Format', $this->prefix.'-money_format', 'custom', false, null,
-                "<select name=\"{$this->prefix}-money_format\">
-<option value=\"%!i\"".((get_option($this->prefix.'-money_format') == '%!i') ? ' selected' : '').">". money_format('%!i', 1234.56) ."</option>
-<option value=\"%!^i\"".((get_option($this->prefix.'-money_format') == '%!^i') ? ' selected' : '').">". money_format('%!^i', 1234.56) ."</option>
-<option value=\"%!=*(#10.2n\"".((get_option($this->prefix.'-money_format') == '%!=*(#10.2n') ? ' selected' : '').">". money_format('%!=*(#10.2n', 1234.56) ."</option>
-<option value=\"%!=*^-14#8.2i\"".((get_option($this->prefix.'-money_format') == '%!=*^-14#8.2i') ? ' selected' : '').">". money_format('%!=*^-14#8.2i', 1234.56) ."</option>
-</select>
-<div>This is based on your current locale, which is set to <code>". setlocale(LC_MONETARY, 0) ."</code></div>"
-            );
+        // Show money pulldown if we are using Panhandler or have set the uses_money flag
+        //
+        if  (
+            (($this->driver_type == 'Panhandler') || $this->uses_money) && 
+            (function_exists('money_format')) 
+            ) {
+                $this->settings->add_item(
+                    'Display Settings', 
+                    'Money Format', 
+                    'money_format', 
+                    'list', 
+                    false, 
+                    __('This is based on your current locale, which is set to ',$this->prefix).
+                        '<code>'. setlocale(LC_MONETARY, 0) .'</code>',
+                    array(
+                        money_format('%!i', 1234.56)            => '%!i',
+                        money_format('%!^i', 1234.56)           => '%!^i',
+                        money_format('%!=*(#10.2n', 1234.56)    => '%!=*(#10.2n',
+                        money_format('%!=*^-14#8.2i', 1234.56)  => '%!=*^-14#8.2i'
+                        )
+                    );
         }
     }
 
-    /**
-     * method: display_products
-     *
-     * Legacy Panhandler stuff that will eventually come out.
-     * This method generates the HTML that will be used to display
-     * the product list in WordPress when it renders the page.
-     *
-     **/
-    function display_products($products) {
-        $product_output[] = '';
-        foreach ($products as $product) {
-            $product_output[] = "<div class=\"{$this->prefix}-product\">";
-            $product_output[] = "<h3>{$product->name}</h3>";
-            // --- DISABLED ---
-            // This check takes entirely too long and I have yet to find
-            // any method that works properly *and* quickly.
-            //
-            // Clicking on the zoom link for a url of an image that's not
-            // there causes thickbox to hang indefinitely, therefore we only
-            // show the link (and the image) if the file exists.
-            //        if (wpCJ_url_exists($product->image_urls[0])) {
-            $product_output[] = "<div class=\"{$this->prefix}-left\">";
-            $product_output[] = "<a href=\"{$product->web_urls[0]}\" target=\"newinfo\">";
-            $product_output[] = "<img src=\"{$product->image_urls[0]}\" alt=\"{$product->name}\" title=\"{$product->name}\" />";
-            $product_output[] = '</a><br/>';
-            $product_output[] = '<a class="thickbox" href="'.$product->image_urls[0].'">+zoom</a>';
-            $product_output[] = '</div>';
-            //        }
-            $product_output[] = '<div class="'.$this->prefix . '-right">';
-            $product_output[] = '<p class="' . $this->prefix . '-desc" >'.$product->description.'</p>';
-            $product_output[] = '<p class="' . $this->prefix . '-price">'.$product->currency;
-            $product_output[] = "$<a href=\"{$product->web_urls[0]}\" target=\"newinfo\">";
-            if (function_exists('money_format') && 
-                    get_option($this->prefix.'-money_format') && 
-                    (get_option($this->prefix.'-money_format') != '')) {
-                $product_output[] = money_format(get_option($this->prefix.'-money_format'), 
-                    (float)$product->price);
-            } else {
-                $product_output[] = number_format((float)$product->price, 2);
-            }
-            $product_output[] = '</a>';
-            $product_output[] = '</p>';
-            $product_output[] = '</div>';
-            $product_output[] = '<div class="'.$this->prefix.'-cleanup"></div>';            
-            $product_output[] = '</div>';            
-        }
 
-        return implode("\n", $product_output);
-    }
-
-    /**
+    /**-------------------------------------
      * method: display_objects
      *
      * This method generates the HTML that will be used to display
@@ -596,7 +788,8 @@ class wpCSL_plugin__mpebay {
     }
 
 
-    /* Method: SHORTCODE_SHOW_ITEMS
+    /**-------------------------------------
+     * Method: SHORTCODE_SHOW_ITEMS
      *
      * Shows the products in a formatted output on the page wherever the shortcode appears.
      * This is the default output, custom shortcodes and functions can be put in the main
@@ -604,8 +797,21 @@ class wpCSL_plugin__mpebay {
      *
      */
     function shortcode_show_items($atts, $content = NULL) {
-        if (   $this->ok_to_show() ) {
+        if ( $this->ok_to_show() ) {
 
+            // Debugging
+            //
+            if ($this->debugging) {
+                if (is_array($atts)) {
+                    print __('DEBUG: Shortcode called with attributes:',$this->prefix) . "<br/>\n";
+                    foreach ($atts as $name=>$value) {
+                        print $name.':'.$value."<br/>\n";
+                    }
+                } else {
+                    print __('DEBUG: Shortcode called with no attributes.',$this->prefix) . "<br/>\n";
+                }
+            }            
+            
             // Filter out erroneous attributes
             if (is_array($atts)) {
                 $atts = array_intersect_key( $atts, 
@@ -633,6 +839,8 @@ class wpCSL_plugin__mpebay {
                 $this->driver->set_default_option_values($defaults);
             }
 
+
+            
             // Fetch the products
             // Check the cache first, then go direct to the source
             //
@@ -670,7 +878,7 @@ class wpCSL_plugin__mpebay {
                 // Legacy Panhandler Stuff
                 //
                 if (is_a($products[0], 'PanhandlerProduct')) {
-                    $content = $this->display_products($products);
+                    $content = $this->products->display_products($products);
 
                     // Object Display, yes Panhandler appendages
                     // still abound leaving us with a $products var name
@@ -681,14 +889,20 @@ class wpCSL_plugin__mpebay {
                 }
 
             } else {
-                $content="No products found";
+                $content= __('No products found', $this->prefix);
             }
 
             return $content;
+            
+        // Not OK TO Show
+        } else {
+            if ($this->debugging) {
+                $content = __('DEBUG: Not OK To Show',$this->prefix);
+            }
         }
     }
 
-    /***********************************************
+    /**-------------------------------------
      ** method: user_header_js
      **/
     function user_header_js() {
@@ -696,13 +910,13 @@ class wpCSL_plugin__mpebay {
         wp_enqueue_script('thickbox');
     }
 
-    /***********************************************
+    /**-------------------------------------
      ** method: user_header_css
      **/
     function user_header_css() {
 
         if (isset($this->css_url)) {
-            wp_register_style($this->perfix.'css', $this->css_url);
+            wp_register_style($this->prefix.'css', $this->css_url);
         } else if (isset($this->plugin_url)) {
             wp_register_style($this->prefix.'css', $this->plugin_url . '/css/'.$this->prefix.'.css');
         }
@@ -710,7 +924,7 @@ class wpCSL_plugin__mpebay {
         wp_enqueue_style('thickbox');
     }
 
-    /***********************************************
+    /**-------------------------------------
      ** method: apply_driver_defaults
      **
      ** Populate an array with values from wordpress if they exist, will
@@ -733,4 +947,3 @@ class wpCSL_plugin__mpebay {
     }
 }
 
-?>

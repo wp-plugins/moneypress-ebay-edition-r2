@@ -30,9 +30,14 @@ final class eBayDriver implements Panhandles {
      */
     private $supported_options = array(
         'affiliate_info',
+        'country_listed_in',
+        'detailed_listings',
         'product_count',
         'keywords',
         'category_id',
+        'min_price',
+        'max_price',
+        'search_description',
         'sellers',
         'sort_order',
     );
@@ -83,7 +88,7 @@ final class eBayDriver implements Panhandles {
      *
      */
     private $sort_order = null;
-
+        
     //// CONSTRUCTOR ///////////////////////////////////////////
 
     /**
@@ -91,6 +96,9 @@ final class eBayDriver implements Panhandles {
      * this to fetch product information.
      */
     public function __construct($options) {
+        // Set overridable properties
+         $this->detailed_listings = false;
+         
         // Set the properties of this object based on 
         // the named array we got in on the constructor
         //
@@ -168,7 +176,7 @@ final class eBayDriver implements Panhandles {
      */
     private function make_request_url() {
         
-        if ($this->product_count) {
+        if (isset($this->product_count) && ($this->product_count > 0)) {
             self::set_maximum_product_count($this->product_count);
         }
         
@@ -190,10 +198,21 @@ final class eBayDriver implements Panhandles {
             $options['sortOrder'] = $this->sort_order;
         }
         
-        if ($this->category_id) {
+        if (isset($this->category_id) && $this->category_id) {
             $options['categoryId'] = $this->category_id;
         }
 
+        
+        /*----------------------------
+         * Plus Pack Options
+         */
+        if ($this->plus_pack_enabled) {
+            if (isset($this->search_description)){
+                $options['descriptionSearch'] = $this->search_description;
+            }            
+        }
+        
+        
         $options = $this->apply_filters($options);
         $options = $this->apply_affiliate_info($options);
         
@@ -232,9 +251,32 @@ final class eBayDriver implements Panhandles {
      * 'itemFilter(x)'.
      */
     private function apply_filters($options) {
+        $filterCount = 0;
         if ($this->sellers) {
-            $options['itemFilter(0).name'] = 'Seller';
-            $options["itemFilter(0).value(0)"] = $this->sellers;
+            $options[sprintf('itemFilter(%d).name',$filterCount)] = 'Seller';
+            $options[sprintf('itemFilter(%d).value(0)',$filterCount)] = $this->sellers;
+            $filterCount++;
+        }
+        
+        /*----------------------------
+         * Plus Pack Options
+         */
+        if ($this->plus_pack_enabled) {
+            if (isset($this->min_price) && ($this->min_price > 0)) {
+                $options[sprintf('itemFilter(%d).name',$filterCount)] = 'MinPrice';
+                $options[sprintf('itemFilter(%d).value(0)',$filterCount)] = $this->min_price;
+                $filterCount++;
+            }
+            if (isset($this->max_price) && ($this->max_price > 0)) {
+                $options[sprintf('itemFilter(%d).name',$filterCount)] = 'MaxPrice';
+                $options[sprintf('itemFilter(%d).value(0)',$filterCount)] = $this->max_price;
+                $filterCount++;
+            }            
+            if (isset($this->country_listed_in) && ($this->country_listed_in)) {
+                $options[sprintf('itemFilter(%d).name',$filterCount)] = 'ListedIn';
+                $options[sprintf('itemFilter(%d).value(0)',$filterCount)] = $this->country_listed_in;
+                $filterCount++;
+            }
         }
 
         return $options;
@@ -284,14 +326,42 @@ final class eBayDriver implements Panhandles {
      * a full one back from eBay.
      */
     private function create_description($item) {
+        $theDesc = '<div class="csl_themes-prod_desc">';
+        
+        // Standard Description
+        //
+        $theDesc .= $this->FormatListEntry('Buy It Now',((string) $item->listingInfo->buyItNowAvailable === 'true') ? 'Yes' : 'No');                
+        $theDesc .= $this->FormatListEntry('Number of Bids',(string) ($item->listingInfo->bidCount > 0) ? $item->listingInfo->bidCount : '0');        
+        
+
+        /*----------------------------
+         * Plus Pack Options
+         */
+        if ($this->plus_pack_enabled  && isset($this->detailed_listings) && $this->detailed_listings) {
+            $theDesc .= $this->FormatListEntry('Item ID',(string) $item->itemId);                            
+            $theDesc .= $this->FormatListEntry('Returns Allowed: ',((string) $item->listingInfo->returnsAccepted === 'true') ? 'Yes' : 'No');                           
+        }
+                
+        $theDesc .= '</div><div class="csl_themes-row"></div>';
+        
+        // $theDesc .= '<pre>' . print_r($item,true) . '</pre>';
+        
+        return $theDesc;
+    }
+    
+    /**
+    * method: ForamtListEntry
+    * takes a label and value and returns the formatted div.
+    *
+    */
+    private function FormatListEntry($label,$value) {
         return sprintf(
-            '<ul>
-               <li>' . __('Buy it Now',$this->prefix) . ': %s</li>
-               <li>' . __('Number of Bids',$this->prefix) . ': %d</li>
-             </ul>',
-            ((string) $item->listingInfo->buyItNowAvailable === 'true') ? 'Yes' : 'No',
-            (string) $item->listingInfo->bidCount
-        );
+                '<div class="csl_themes-prod_desc_entry">' . 
+                    '<div class="csl_themes-prod_desc_label">' . __($label,$this->prefix) . ':</div>' .
+                    '<div class="csl_themes-prod_desc_value">%s</div>'.
+                '</div>',
+                (string) $value
+                );                                    
     }
 
     /**

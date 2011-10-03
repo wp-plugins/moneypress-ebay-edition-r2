@@ -1,11 +1,11 @@
 /**
  ** file: cls-mp-ebay.css
+ ** label: MoneyPress Classic
  **
- ** Provide styling for the product listings within the
- ** MoneyPress : eBay Edition Plugin
+ ** The classic theme for MoneyPress : eBay Edition
  **
  **/
-.csl-mp-ebay-product {
+.csl_themes-product {
     clear: both;
     background-color: #F8EEC0;
     border: 1px solid #A48F2C;
@@ -13,16 +13,16 @@
     padding: 5px;
 }
 
-.csl-mp-ebay-product div {
+.csl_themes-product div {
     padding: 0 0 0 5px;
 }
 
-.csl-mp-ebay-product h3 {
+.csl_themes-product h3 {
     margin: 0 0 10px 0;
     color: ##3D3D3D;
 }
 
-.csl-mp-ebay-left {
+.csl_themes-left {
     float: left;
     padding: 0 5px 5px 0;
     max-width: 150px;
@@ -30,20 +30,20 @@
     text-align: center;
 }
 
-.csl-mp-ebay-right {
+.csl_themes-right {
     float: left;
     text-align: left;
 }
 
-.csl-mp-ebay-cleanup {
+.csl_themes-cleanup {
     clear: both;
 }
 
-.csl-mp-ebay-product li {
+.csl_themes-product li {
     list-style: none;
 }
 
-.csl-mp-ebay-price {
+.csl_themes-price {
     font-family: Arial, Helvetica, sans-serif;
     font-size: 16px;
     font-weight: bold;
@@ -51,6 +51,6 @@
     background-color: #E7DDB9;
 }
 
-.csl-mp-ebay-product IMG {
+.csl_themes-product IMG {
     padding-right: 12px;
 }
