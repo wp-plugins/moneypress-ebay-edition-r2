@@ -5,7 +5,7 @@ Donate Link: http://www.cybersprocket.com/products/moneypress-ebay-edition/
 Tags: plugin,post,page,ebay,affiliate,store
 Requires at least: 3.0
 Tested up to: 3.2.1
-Stable tag: 2.1
+Stable tag: 2.1.1
 
 This plugin allows you to display eBay listings on your web site by placing a simple shortcode in your page or post. Filter results by keyword, seller ID, or a combination of both.
 
@@ -19,7 +19,7 @@ After installing the plugin (see below for instructions) you can show products o
 
     [mp_ebay keywords="wordpress books"]
 
-would populate your site with a listing of products matching those keywords.  It’s quite likely that there is not a large intersection between delicious cakes and ferocious black bears, but you never know.  Fortunately you can put any keywords you like into the shortcode, to best suit your website.
+would populate your site with a listing of products matching those keywords.  You can put any keywords you like into the shortcode, to best suit your website.
 
 If you are a merchant on eBay then you can enter your seller ID to list only your own products.  Or you could put it anyone’s seller ID, if you want to list their products.  If you have entered a seller ID then you do not have to provide any keywords.  For example, you could just write
 
@@ -123,12 +123,14 @@ All support inquiries should be posted at the forum section of the knowledgebase
 
 == Changelog ==
 
-= v2.1 (October 2011) =
+= v2.1.1 (October 2011) =
 
 * Base product now requires NO LICENSE KEY.  The base product is fully functional.
 * New add-on packs now available from directly within the plugin.
 * Plus Pack : optional paid package now available (see website for details).
 * Plus Pack : CSS themes are now available, several to choose from are provided.
+* Plus Pack : More product filters.
+* Plus Pack : Add more details to listing.
 
 = v2.0 (January 2011) =
 
