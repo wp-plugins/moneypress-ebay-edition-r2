@@ -20,14 +20,15 @@ class wpCSL_cache__mpebay {
         $this->settings->add_section(array(
                 'name' => 'Cache Settings',
                 'description' => "<p>Your cache directory can be found at: <code>".
-                    $this->path."</code></p>"
+                    $this->path."</code></p>",
+                'start_collapsed' => true
             )
         );
 
         $this->settings->add_item(
             'Cache Settings',
             'Enable Caching',
-            $this->prefix.'-cache_enable',
+            'cache_enable',
             'checkbox'
         );
         $this->settings->add_item('Cache Settings',
