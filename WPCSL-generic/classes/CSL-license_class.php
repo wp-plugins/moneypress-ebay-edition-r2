@@ -6,7 +6,7 @@
 * Handle the license management subsystem for WPCSL-Generic.
 *
 * Process the license keys, validating them against the license server.
-* 
+*
 ************************************************************************/
 
 class wpCSL_license__mpebay {
@@ -38,10 +38,12 @@ class wpCSL_license__mpebay {
         if ($usethis_license == '') {
             $usethis_license = get_option($this->prefix . '-license_key');
         }
-        
-        // Package test v. standard test?
-        $checkPackage = $isa_package ? 'true' : 'false';
-        
+
+        // Don't check to see if the license is valid if there is no supplied license key
+        if ($usethis_license == '') {
+            return false;
+        }
+
         // HTTP Handler is not set fail the license check
         //
         if (!isset($this->http_handler)) { return false; }
@@ -53,7 +55,8 @@ class wpCSL_license__mpebay {
                 'id' => $usethis_license,
                 'siteurl' => get_option('siteurl'),
                 'sku' => $theSKU,
-                'checkpackage' => $checkPackage
+                'checkpackage' => $isa_package ? 'true' : 'false',
+                'advanced' => 'true'
             )
         );
         
@@ -73,14 +76,12 @@ class wpCSL_license__mpebay {
                             array('timeout' => 60) 
                             ); 
             if ($this->http_result_is_ok($result) ) {
-                $response = ($result['body'] != 'false');
+                $response = json_decode($result['body']);
             }
-                     
 
             // If we get a true response record it in the DB and exit
             //
-            if ($response) {
-                
+            if ($response->result) {
                 //.............
                 // Licensed
                 // main product
@@ -90,8 +91,18 @@ class wpCSL_license__mpebay {
                 // add on package
                 } else {
                     update_option($this->prefix.'-'.$theSKU.'-isenabled',true);
+
+                    // Make sure we never downgrade the user's version
+                    if ($response->effective_version_numeric > (int)get_option($this->prefix.'-'.$theSKU.'-version-numeric')) {
+                        update_option($this->prefix.'-'.$theSKU.'-version',$response->effective_version);
+                        update_option($this->prefix.'-'.$theSKU.'-version-numeric',$response->effective_version_numeric);
+                    }
+
                 }
-                return true; 
+
+                update_option($this->prefix.'-'.$theSKU.'-latest-version',$response->latest_version);
+                update_option($this->prefix.'-'.$theSKU.'-latest-version-numeric',$response->latest_version_numeric);
+                return true;
             }
         }
                 

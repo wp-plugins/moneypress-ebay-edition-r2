@@ -23,7 +23,7 @@ if (defined('MP_EBAY_PLUGINDIR')) {
             'url'                    => 'http://cybersprocket.com/products/moneypress-ebay/',
             'support_url'            => 'http://redmine.cybersprocket.com/projects/mpress-ebay',
             'purchase_url'           => 'http://cybersprocket.com/products/moneypress-ebay-edition/',
-            'cache_path'             => MP_EBAY_PLUGINDIR,
+            'cache_path'             => MP_EBAY_PLUGINDIR . 'cache',
             'plugin_url'             => MP_EBAY_PLUGINURL,
             'plugin_path'            => MP_EBAY_PLUGINDIR,
             'basefile'               => MP_EBAY_BASENAME,
@@ -77,9 +77,11 @@ function add_options_packages_for_mpebay() {
                                        'See the <a href="'.$MP_ebay_plugin->purchase_url.'" target="Cyber Sprocket">product page</a> for details.  If you purchased this add-on ' .
                                        'come back to this page to enter the license key to activate the new features.',
                 'sku'               => 'MPEBY-PLUS',
-                'paypal_button_id'  => 'LJHLF4BHYMZMQ'
-            )            
+                'paypal_button_id'  => 'LJHLF4BHYMZMQ',
+                'paypal_upgrade_button_id' => 'VXPLD5S3QPZBN'
+            )
         );
+
     if ($MP_ebay_plugin->license->packages['Plus Pack']->isenabled_after_forcing_recheck()) {
         $MP_ebay_plugin->themes_enabled = true;
     }       
