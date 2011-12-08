@@ -845,7 +845,7 @@ class wpCSL_plugin__mpebay {
             // Check the cache first, then go direct to the source
             //
             if (isset($this->cache) && get_option($this->prefix.'-cache_enable')) {
-                if (!($products = $this->cache->load(md5(implode(',',$atts)))) ) {
+                if (!($products = $this->cache->load(md5(implode(',',(array)$atts)))) ) {
                     $products = $this->driver->get_products($atts);
                 }
             } else {
@@ -866,7 +866,7 @@ class wpCSL_plugin__mpebay {
             if (is_a($products, 'PanhandlerError')) return $products->message;
             else {
                 if (isset($this->cache) && get_option($this->prefix.'-cache_enable')) {
-                    $this->cache->save(md5(implode(',',$atts)), $products);
+                    $this->cache->save(md5(implode(',', (array)$atts)), $products);
                 }
             }
 

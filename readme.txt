@@ -1,11 +1,11 @@
-=== MoneyPress : eBay Edition (Oct 2011) ===
+=== MoneyPress : eBay Edition ===
 Plugin Name: MoneyPress : eBay Edition (Oct 2011)
 Contributors: cybersprocket
 Donate Link: http://www.cybersprocket.com/products/moneypress-ebay-edition/
 Tags: plugin,post,page,ebay,affiliate,store
-Requires at least: 3.0
+Requires at least: 3.1
 Tested up to: 3.2.1
-Stable tag: 2.1.2
+Stable tag: 2.1.3
 
 This plugin allows you to display eBay listings on your web site by placing a simple shortcode in your page or post. Filter results by keyword, seller ID, or a combination of both.
 
@@ -122,6 +122,9 @@ All support inquiries should be posted at the forum section of the knowledgebase
 9. Product Logo 
 
 == Changelog ==
+
+= v2.1.3 (December 2012) =
+* Fixed various issues with caching system and related php warnings
 
 = v2.1.1 (October 2011) =
 
