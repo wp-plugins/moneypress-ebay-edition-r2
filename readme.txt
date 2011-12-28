@@ -5,7 +5,7 @@ Donate Link: http://www.cybersprocket.com/products/moneypress-ebay-edition/
 Tags: plugin,post,page,ebay,affiliate,store
 Requires at least: 3.1
 Tested up to: 3.2.1
-Stable tag: 2.1.3
+Stable tag: 2.1.4
 
 This plugin allows you to display eBay listings on your web site by placing a simple shortcode in your page or post. Filter results by keyword, seller ID, or a combination of both.
 
@@ -31,7 +31,7 @@ http://www.youtube.com/watch?v=N8SIKH00p7k
 
 = Add On Packages Now Available =
 
-Our Light Edition (LE) and standard edition products are no longer separate.
+Our Light Edition (LE) and standard edition products are no longer separate.   
 You can now add the features of the full edition product without uninstalling the
 light edition version.  Option packs are now available directly from within the plugin
 itself making it easier for users to activate and utilize the extended feature set.
@@ -57,8 +57,8 @@ edition product was 3-6 months behind the plus edition for bug fixes and patches
 
 = Need Special Features? =
 
-Cyber Sprocket can provide modifications to the plugin to make it the perfect solution for your site.
-We charge $60/hour to create custom additions that we roll into the next product release.
+Cyber Sprocket can provide modifications to the plugin to make it the perfect solution for your site.  
+We charge $60/hour to create custom additions that we roll into the next product release. 
 You get exactly the plugin you want and will have the benefit of having a mainstream product release.
 You get the benefit of getting our future upgrades without having to re-apply your patches.
 
@@ -66,8 +66,8 @@ Learn more at: http://www.cybersprocket.com/
 
 = Related Links =
 
-* [MoneyPress : eBay Edition](http://www.cybersprocket.com/products/moneypress-ebay-edition/)
-* [Other Cyber Sprocket Plugins](http://wordpress.org/extend/plugins/profile/cybersprocket/)
+* [MoneyPress : eBay Edition](http://www.cybersprocket.com/products/moneypress-ebay-edition/) 
+* [Other Cyber Sprocket Plugins](http://wordpress.org/extend/plugins/profile/cybersprocket/) 
 * [Our Facebook Page](http://www.facebook.com/cyber.sprocket.labs)
 * [Demo Site - see it in action](http://www.remodelcharleston.com)
 
@@ -86,7 +86,7 @@ PHP 5.2 or later with support for cURL and SimpleXML.
  * (Optional) Enter your affiliate information.  For example, see the description for the ‘Network ID’ on how to sign up as an eBay affiliate.
  * Enter the ‘[ebay_show_items keywords=”…” category_id=""]’ on any page you want to list products.
  * Category ID is an optional attribute that allows you to filter the displayed products by category. It requires the numerical category id which can be found at http://pages.ebay.com/sellerinformation/growing/categorychanges.html. For example, the Category ID for Antiques is 20081 so to filter by antiques, the tag would be ‘[ebay_show_items category_id="20081"]’
-
+ 
 = Plus Pack =
 
 The Plus Pack requires the purchase of a license.  When you purchase the Plus Pack you will receive an email with a license key.
@@ -119,11 +119,16 @@ All support inquiries should be posted at the forum section of the knowledgebase
 6. Plus Pack "white theme" listing output.
 7. Affiliate linking/tracking built in!
 8. Standard settings filter by specific seller, and more.
-9. Product Logo
+9. Product Logo 
 
 == Changelog ==
 
+= v2.1.4 (December 28th 2011) =
+
+* Admin panel styling updates.
+
 = v2.1.3 (December 2011) =
+
 * Fixed various issues with caching system and related php warnings
 
 = v2.1.1 (October 2011) =

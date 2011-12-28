@@ -91,13 +91,20 @@ class wpCSL_license__mpebay {
                 // add on package
                 } else {
                     update_option($this->prefix.'-'.$theSKU.'-isenabled',true);
-
+                    
+                    // Local version info for this package is empty, set it
+                    //
+                    if (get_option($this->prefix.'-'.$theSKU.'-version') == '') {                        
+                            update_option($this->prefix.'-'.$theSKU.'-version',$response->latest_version);
+                            update_option($this->prefix.'-'.$theSKU.'-version-numeric',$response->latest_version_numeric);
+                            
+                    // Local version is not empty,                         
                     // Make sure we never downgrade the user's version
-                    if ($response->effective_version_numeric > (int)get_option($this->prefix.'-'.$theSKU.'-version-numeric')) {
-                        update_option($this->prefix.'-'.$theSKU.'-version',$response->effective_version);
-                        update_option($this->prefix.'-'.$theSKU.'-version-numeric',$response->effective_version_numeric);
-                    }
-
+                    //
+                    } else if ($response->effective_version_numeric > (int)get_option($this->prefix.'-'.$theSKU.'-version-numeric')) {
+                            update_option($this->prefix.'-'.$theSKU.'-version',$response->effective_version);
+                            update_option($this->prefix.'-'.$theSKU.'-version-numeric',$response->effective_version_numeric);
+                    }             
                 }
 
                 update_option($this->prefix.'-'.$theSKU.'-latest-version',$response->latest_version);
@@ -144,8 +151,10 @@ class wpCSL_license__mpebay {
                 if (isset($this->notifications)) {
                     $this->notifications->add_notice(
                         2,
-                        "You have not provided a valid license key for this plugin. " .
-                            "Until you do so, it will only display content for Admin users.",
+                        __("You have not provided a valid license key for this plugin. " .
+                            "Until you do so, it will only display content for Admin users." 
+                            ,WPCSL__mpebay__VERSION
+                            ),
                         "options-general.php?page={$this->prefix}-options#product_settings"
                     );
                 }
@@ -163,9 +172,11 @@ class wpCSL_license__mpebay {
         register_setting($this->prefix.'-settings', $this->prefix.'-license_key');
         register_setting($this->prefix.'-Settings', $this->prefix.'-purchased');
         
-        foreach ($this->packages as $aPackage) {
-            $aPackage->initialize_options_for_admin();
-        }
+        if ($this->has_packages) {
+            foreach ($this->packages as $aPackage) {
+                $aPackage->initialize_options_for_admin();
+            }
+        }            
     }
 
     /**-----------------------------------

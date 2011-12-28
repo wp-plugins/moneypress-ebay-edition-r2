@@ -20,7 +20,7 @@ class wpCSL_settings__mpebay {
         //
         $this->render_csl_blocks = true;        // Display the CSL info blocks
         $this->form_action = 'options.php';     // The form action for this page
-        $this->save_text =__('Save Changes');
+        $this->save_text =__('Save Changes',WPCSL__mpebay__VERSION);
         $this->css_prefix = '';  
         $this->has_packages = false;
         
@@ -367,7 +367,8 @@ class wpCSL_settings__mpebay {
         // List the packages
         //
         if (isset($this->parent->license->packages) && ($this->parent->license->packages > 0)) {
-            $content .='<tr><td colspan="2" class="optionpack_topline">'.__('The following optional add-ons are available').':</td></tr>';
+            $content .='<tr><td colspan="2" class="optionpack_topline">'.
+            __('The following optional add-ons are available',WPCSL__mpebay__VERSION).':</td></tr>';
             $content .= '<tr valign="top">';
             foreach ($this->parent->license->packages as $package) {
                 $content .= '<th class="input_label optionpack">'.$package->name.'</th>';
@@ -417,8 +418,14 @@ class wpCSL_settings__mpebay {
             $installed_version = get_option($this->prefix.'-'.$package->sku.'-version');
             $latest_version = get_option($this->prefix.'-'.$package->sku.'-latest-version');
 
-            $upgrade_available = (get_option($this->prefix.'-'.$package->sku.'-version-numeric') <
-                                 get_option($this->prefix.'-'.$package->sku.'-latest-version-numeric'));
+            // Upgrade is available if the current package version < the latest available
+            // -AND- the current package version is has been set
+            $upgrade_available = (
+                        ($installed_version != '') &&                
+                        (   get_option($this->prefix.'-'.$package->sku.'-version-numeric') <
+                            get_option($this->prefix.'-'.$package->sku.'-latest-version-numeric')
+                        )                        
+                    );
 
             // Package is enabled, just show that
             //
