@@ -3,7 +3,7 @@
   Plugin Name: MoneyPress : eBay Edition
   Plugin URI: http://www.charlestonsw.com/product/moneypress-ebay-edition/
   Description: This plugin allows you to display eBay listings on your web site by placing a simple shortcode in your page or post.
-  Version: 2.1.5
+  Version: 2.1.6
   Author: Charleston Software Associates
   Author URI: http://www.charlestonsw.com
   License: GPL3

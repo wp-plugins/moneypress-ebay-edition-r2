@@ -45,10 +45,8 @@ final class eBayDriver implements Panhandles {
         'category_id',
         'min_price',
         'max_price',
-        'money_prefix',
         'search_description',
         'sellers',
-        'show_bin_price',
         'sort_order',
     );
 
@@ -99,9 +97,6 @@ final class eBayDriver implements Panhandles {
      */
     private $sort_order = null;
 
-    private $money_prefix = '$';        // Character to prefix money output
-    private $show_bin_price = false;    // Show the BIN price next to the BIN flag
-
     //// CONSTRUCTOR ///////////////////////////////////////////
 
     /**
@@ -125,26 +120,7 @@ final class eBayDriver implements Panhandles {
         foreach ($options as $name => $value) {
             $this->$name = $value;
         }
-
-
-        // Add filters and hooks
-        //
-        if ($this->pro_pack_enabled) {
-            add_filter($this->prefix.'_money_prefix',array($this,'money_prefix_filter'));
-        }
     }
-
-
-    /**
-     * Change the money prefix in wpCSL default to whatever the user picked.
-     *
-     * @param string $prefix
-     * @return string
-     */
-    function money_prefix_filter($prefix='') {
-        return $this->money_prefix;
-    }
-
 
     //// INTERFACE METHODS /////////////////////////////////////
 
@@ -243,9 +219,9 @@ final class eBayDriver implements Panhandles {
 
 
         /*----------------------------
-         * Pro Pack Options
+         * Plus Pack Options
          */
-        if ($this->pro_pack_enabled) {
+        if ($this->plus_pack_enabled) {
             if (isset($this->search_description)){
                 $options['descriptionSearch'] = $this->search_description;
             }
@@ -298,9 +274,9 @@ final class eBayDriver implements Panhandles {
         }
 
         /*----------------------------
-         * Pro Pack Options
+         * Plus Pack Options
          */
-        if ($this->pro_pack_enabled) {
+        if ($this->plus_pack_enabled) {
             if (isset($this->min_price) && ($this->min_price > 0)) {
                 $options[sprintf('itemFilter(%d).name',$filterCount)] = 'MinPrice';
                 $options[sprintf('itemFilter(%d).value(0)',$filterCount)] = $this->min_price;
@@ -369,30 +345,19 @@ final class eBayDriver implements Panhandles {
 
         // Standard Description
         //
-        $binYesStr = 'Yes' .
-                      (($this->pro_pack_enabled && $this->show_bin_price) ?
-                        ' '. $this->money_prefix . (string) $item->listingInfo->buyItNowPrice :
-                        ''
-                      )
-                ;
-        $theDesc .= $this->FormatListEntry('Buy It Now',
-                            ((string) $item->listingInfo->buyItNowAvailable === 'true') ?
-                                $binYesStr :
-                                'No'
-                            );
+        $theDesc .= $this->FormatListEntry('Buy It Now',((string) $item->listingInfo->buyItNowAvailable === 'true') ? 'Yes' : 'No');
         $theDesc .= $this->FormatListEntry('Number of Bids',(string) ($item->listingInfo->bidCount > 0) ? $item->listingInfo->bidCount : '0');
 
+
         /*----------------------------
-         * Pro Pack Options
+         * Plus Pack Options
          */
-        if ($this->pro_pack_enabled  && isset($this->detailed_listings) && $this->detailed_listings) {
+        if ($this->plus_pack_enabled  && isset($this->detailed_listings) && $this->detailed_listings) {
             $theDesc .= $this->FormatListEntry('Item ID',(string) $item->itemId);
             $theDesc .= $this->FormatListEntry('Returns Allowed: ',((string) $item->listingInfo->returnsAccepted === 'true') ? 'Yes' : 'No');
         }
 
         $theDesc .= '</div><div class="csl_themes-row"></div>';
-
-        //$theDesc .= '<pre>' . print_r($item,true) . '</pre>';
 
         // $theDesc .= '<pre>' . print_r($item,true) . '</pre>';
 
