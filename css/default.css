@@ -1,16 +1,15 @@
 /** 
- ** file: mp-white-2up.css
- ** label: White Two Column
- ** columns: 2
- ** 
- ** The "White Two Column" theme for MoneyPress.
+ ** file: default.css
+ ** label: Default MP Layout
+ ** columns: 1
+ ** description: The default layout for MoneyPress. 
  **
  **/
-
+ 
 /* Product Rows */ 
  .csl_themes-row {
     clear: both;
-    min-width: 250px;
+    min-width: 852px;
  }
  
  /* Product Box Header */
@@ -20,7 +19,7 @@
  
 /* Product Zoom */
 div.csl_themes-product div.csl_themes-left div.csl_themes-zoombox {
-    background: url("../images/General_icons16.png") 
+    background: url("../core/images/General_icons16.png") 
         no-repeat scroll 
         -41px 0px 
         transparent; 
@@ -37,7 +36,6 @@ div.csl_themes-zoombox a.thickbox {
     text-decoration: none;
 }
  
- 
 .csl_themes-product {
     float: left;
     background-color: #FFFFFF;
@@ -45,8 +43,7 @@ div.csl_themes-zoombox a.thickbox {
     margin: 10px 2px;
     padding: 0px;
     min-height: 155px;
-    min-width: 280px;
-    clear: none;    
+    width: 600px;
 }
 
 .csl_themes-product div {
