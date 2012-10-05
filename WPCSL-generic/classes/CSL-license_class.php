@@ -9,12 +9,24 @@
 *
 ************************************************************************/
 
-class wpCSL_license__mpebay {
+class wpCSL_license__mpebay {    
 
+    /**------------------------------------
+     ** CONSTRUCTOR
+     **/
     function __construct($params) {
+        
+        // Defaults
+        //
+
+        // Set by incoming parameters
+        //
         foreach ($params as $name => $value) {
             $this->$name = $value;
         }
+        
+        // Override incoming parameters
+        
     }
 
     /**------------------------------------
@@ -23,8 +35,7 @@ class wpCSL_license__mpebay {
      ** Currently only checks for an existing license key (PayPal
      ** transaction ID).
      **/
-    function check_license_key($theSKU='', $isa_package=false, $usethis_license='') {
-
+    function check_license_key($theSKU='', $isa_package=false, $usethis_license='', $force = false) {
         // The SKU
         //
         if ($theSKU == '') {
@@ -42,6 +53,23 @@ class wpCSL_license__mpebay {
         // Don't check to see if the license is valid if there is no supplied license key
         if ($usethis_license == '') {
             return false;
+        }
+
+        // Save the current date and retrieve the last time we checked
+        // with the server.
+        if (!$isa_package) {
+            $last_lookup = get_option($this->prefix.'-last_lookup');
+            update_option($this->prefix.'-last_lookup', time());
+        } else {
+            $last_lookup = get_option($this->prefix.'-'.$theSKU.'-last_lookup');
+            update_option($this->prefix.'-'.$theSKU.'-last_lookup', time());
+        }
+
+        // Only check every 3 days.
+        $date_differential = (3 * 24 * 60 * 60);
+
+        if (!$force && ($last_lookup + $date_differential) > time() ) {
+            return $this->AmIEnabled($isa_package, $theSKU);
         }
 
         // HTTP Handler is not set fail the license check
@@ -63,25 +91,31 @@ class wpCSL_license__mpebay {
         // Places we check the license
         //
         $csl_urls = array(
-            'http://cybersprocket.com/paypal/valid_transaction.php?',
-            'http://license.cybersprocket.com/paypal/valid_transaction.php?',
+            'http://www.charlestonsw.com/paypal/valid_transaction.php?',
             );
 
         // Check each server until all fail or ONE passes
-        //  
-        foreach ($csl_urls as $csl_url) {            
-            $response = false;
-            $result = $this->http_handler->request( 
-                            $csl_url . $query_string, 
-                            array('timeout' => 60) 
-                            ); 
-            if ($this->http_result_is_ok($result) ) {
+        //
+        $response = null;
+        foreach ($csl_urls as $csl_url) {
+            $result = $this->http_handler->request(
+                            $csl_url . $query_string,
+                            array('timeout' => 10)
+                            );
+            
+            if ($this->parent->http_result_is_ok($result) ) {
                 $response = json_decode($result['body']);
             }
 
+            // If response is still a bool... and false... we have a problem...
+            if (is_null($response) || !is_object($response)) {
+                continue;
+            }
+            
             // If we get a true response record it in the DB and exit
             //
             if ($response->result) {
+                
                 //.............
                 // Licensed
                 // main product
@@ -112,20 +146,31 @@ class wpCSL_license__mpebay {
                 return true;
             }
         }
-                
+
+        // Handle possible server disconnect
+        if (is_null($response)) {
+            return $this->AmIEnabled($isa_package, $theSKU);
+        }
+
         //.............
         // Not licensed
-        // main product
-        if (!$isa_package) { 
-            update_option($this->prefix.'-purchased',false);
-            
-        // add on package
-        } else {
-            update_option($this->prefix.'-'.$theSKU.'-isenabled',false);            
-        }
-        
-        
         return false;
+    }
+
+    /**------------------------------------
+     ** method: AmIEnabled
+     ** Parameters: $isa_package = is it a package or the main product
+     **             $theSKU = the sku of the product
+     ** Returns: True if enabled/purchased, false if not
+     **/
+    function AmIEnabled($isa_package, $theSKU) {
+        if (!$isa_package) {
+                return get_option($this->prefix.'-purchased',false);
+
+                // add on package
+            } else {
+                return get_option($this->prefix.'-'.$theSKU.'-isenabled',false);
+            }
     }
 
     /**------------------------------------
@@ -170,7 +215,7 @@ class wpCSL_license__mpebay {
      **/
     function initialize_options() {
         register_setting($this->prefix.'-settings', $this->prefix.'-license_key');
-        register_setting($this->prefix.'-Settings', $this->prefix.'-purchased');
+        register_setting($this->prefix.'-settings', $this->prefix.'-purchased');
         
         if ($this->has_packages) {
             foreach ($this->packages as $aPackage) {
@@ -178,32 +223,6 @@ class wpCSL_license__mpebay {
             }
         }            
     }
-
-    /**-----------------------------------
-     * method: http_result_is_ok()
-     *
-     * Determine if the http_request result that came back is valid.
-     *
-     * params:
-     *  $result (required, object) - the http result
-     *
-     * returns:
-     *   (boolean) - true if we got a result, false if we got an error
-     */
-    private function http_result_is_ok($result) {
-
-        // Yes - we can make a very long single logic check
-        // on the return, but it gets messy as we extend the
-        // test cases. This is marginally less efficient but
-        // easy to read and extend.
-        //
-        if ( is_a($result,'WP_Error') ) { return false; }
-        if ( !isset($result['body'])  ) { return false; }
-        if ( $result['body'] == ''    ) { return false; }
-
-        return true;
-    }
-    
     
     /**------------------------------------
      ** method: add_licensed_package()
@@ -220,7 +239,7 @@ class wpCSL_license__mpebay {
         // If we don't have a package name or SKU get outta here
         //
         if (!isset($params['name']) || !isset($params['sku'])) return;
-        
+
         // Setup the new package only if it was not setup before
         //
         if (!isset($this->packages[$params['name']])) {
@@ -246,6 +265,9 @@ class wpCSL_license__mpebay {
  **/
 class wpCSL_license_package__mpebay {
 
+    public $active_version = 0;
+    public $force_enabled = false;
+    
     /**------------------------------------
      **/
     function __construct($params) {
@@ -262,11 +284,15 @@ class wpCSL_license_package__mpebay {
         // set this package to the pre-saved enabled/disabled setting from wp_options
         // which will return false if never set before
         //
-        $this->isenabled = get_option($this->enabled_option_name);        
+        $this->isenabled = ($this->force_enabled || get_option($this->enabled_option_name));        
         
         // Set our license key property
         //
         $this->license_key = get_option($this->lk_option_name);
+        
+        // Set our active version (what we are licensed for)
+        //
+        $this->active_version =  (isset($this->force_version)?$this->force_version:get_option($this->prefix.'-'.$this->sku.'-latest-version-numeric')); 
     }
     
     
@@ -276,15 +302,25 @@ class wpCSL_license_package__mpebay {
      ** Initialize the admin option settings.
      **/
     function initialize_options_for_admin() {
-        register_setting($this->prefix.'-settings', $this->enabled_option_name);                        
-        register_setting($this->prefix.'-settings', $this->lk_option_name);        
+        register_setting($this->prefix.'-settings', $this->lk_option_name);
     }
     
     function isenabled_after_forcing_recheck() {
+        // Now attempt to license ourselves, make sure we license as
+        // siblings (second param) in order to properly set all of the
+        // required settings.
         if (!$this->isenabled) {
-            $this->parent->check_license_key($this->sku, true, get_option($this->lk_option_name));
-            $this->isenabled = get_option($this->enabled_option_name); 
+
+            // License is OK - mark it as such
+            //
+            $this->isenabled = $this->parent->check_license_key($this->sku, false, get_option($this->lk_option_name));
+            update_option($this->enabled_option_name,$this->isenabled);
+            $this->active_version =  get_option($this->prefix.'-'.$this->sku.'-latest-version-numeric');
         }
+
+        // Attempt to register the parent if we have one
+        $this->parent->check_license_key($this->sku, true);
+
         return $this->isenabled;
     }
 }
