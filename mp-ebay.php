@@ -1,14 +1,14 @@
 <?php
 /*
   Plugin Name: MoneyPress : eBay Edition
-  Plugin URI: http://www.cybersprocket.com/products/moneypress-ebay-edition/
+  Plugin URI: http://www.charlestonsw.com/product/moneypress-ebay-edition/
   Description: This plugin allows you to display eBay listings on your web site by placing a simple shortcode in your page or post.
-  Version: 2.1.4
-  Author: Cyber Sprocket Labs
-  Author URI: http://www.cybersprocket.com
+  Version: 2.2
+  Author: Charleston Software Associates
+  Author URI: http://www.charlestonsw.com
   License: GPL3
   
- Copyright (C) 2011 Cyber Sprocket Labs <info@cybersprocket.com>      
+ Copyright (C) 2012 Charlestonn Software Associates
 
  This program is free software; you can redistribute it and/or        
  modify it under the terms of the GNU General Public License          
@@ -54,13 +54,17 @@ if (defined('MP_EBAY_ADMINPAGE') === false) {
 
 // Include our needed files
 //
+global $MP_ebay_plugin;
 require_once(MP_EBAY_PLUGINDIR . '/include/config.php');
 require_once(MP_EBAY_PLUGINDIR . '/include/csl_helpers.php');
 
+require_once(MP_EBAY_PLUGINDIR . '/include/actions_class.php');
+$MP_ebay_plugin->Actions = new MPEBY_Actions(array('parent'=>$MP_ebay_plugin));
 
 // actions
-add_action('wp_print_styles', 'setup_stylesheet_for_mpebay');
-add_action('admin_menu', 'setup_admin_option_pages_for_mpebay');
-add_action('admin_print_styles','setup_ADMIN_stylesheet_for_mpebay');
-add_action('admin_init','setup_admin_interface_for_mpebay',10);
+add_action('admin_menu'         , array($MP_ebay_plugin->Actions,'admin_menu'));
+add_action('admin_print_styles' ,'setup_ADMIN_stylesheet_for_mpebay');
+add_action('admin_init'         ,'setup_admin_interface_for_mpebay',10);
+add_action('wp_head'            , array($MP_ebay_plugin->Actions,'wp_head')              );
+add_action('wp_print_styles'    ,'setup_stylesheet_for_mpebay');
 

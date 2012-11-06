@@ -5,7 +5,14 @@
  ** class: wpCSL_settings__mpebay
  **
  ** The main settings class.
- ** 
+ **
+ ** Methods:
+ **
+ **     __construct         : Overload of the default class instantiation.
+ **     add_section 
+ **     default_broadcast
+ **     get_broadcast   
+ **     get_item            : Return the value of a WordPress option that was saved via the settings interface.
  **/
 class wpCSL_settings__mpebay {
 
@@ -30,147 +37,191 @@ class wpCSL_settings__mpebay {
             $this->$name = $value;
         }
 
-        // Only show the license section if the plugin settings
-        // wants a license module
-        if (!$this->no_license) {
-            $this->license_section_title = 'Plugin License';
-            $this->add_section(array(
-                    'name' => $this->license_section_title,
-                    'description' => "<p>To obtain a key, please purchase this plugin " .
-                        "from <a href=\"{$this->url}\" target=\"_new\">{$this->url}</a>.</p>",
-                    'auto' => false,
-                    'div_id' => 'csl_license_block'
-                )
-            );
-            
-        // We don't have a main license but we have paid option
-        // packages
-        } else if ($this->has_packages) {
-            $this->license_section_title = 'Premium Options';
-            $this->add_section(array(
-                    'name' => $this->license_section_title,
-                    'description' => "<p>{$this->name} has premium options available.<br/>" .
-                        "Visit <a href=\"{$this->url}\" target=\"_new\">{$this->url}</a> to " .
-                        "learn more about the available add-on packages.<br/> After you purchase " .
-                        "an add-on package come back here to activate your add-on packages.</p>",
-                    'auto' => false,
-                    'div_id' => 'csl_license_block'
-                )
-            );
-        }
-
-        // Render CSL Blocks - if set false we don't need this overhead
+        // Only do this if we are on admin panel
         //
-        if ($this->render_csl_blocks) {        
-            $this->csl_php_modules = get_loaded_extensions();
-            natcasesort($this->csl_php_modules);
-            global $wpdb;
-            $this->add_section(
-                array(
-                    'name' => 'Plugin Environment',
-                    'description' =>
-                        '<p>Here are the technical details about your plugin:<br />
-                           <div style="border: solid 1px #E0E0E0; padding: 6px; margin: 6px;
-                               background-color: #F4F4F4;">
-                               
-                             <div style="clear:left;">
-                               <div style="width:150px; float:left; text-align: right;
-                                   padding-right: 6px;">Active WPCSL:</div>
-                               <div style="float: left;">' . plugin_dir_path(__FILE__) . '</div>
-                             </div>                                
-                             <div style="clear:left;">
-                               <div style="width:150px; float:left; text-align: right;
-                                   padding-right: 6px;">Site URL:</div>
-                               <div style="float: left;">' . get_option('siteurl') . '</div>
-                             </div>
-                             <div style="clear:left;">
-                               <div style="width:150px; float:left; text-align: right;
-                                   padding-right: 6px;">Encryption Key:</div>
-                               <div style="float: left;">' . md5(get_option($this->prefix.'-license_key')) . '</div>
-                             </div>
-                             <div style="clear:left;">
-                               <div style="width:150px; float:left; text-align: right;
-                                   padding-right: 6px;">License Key:</div>
-                               <div style="float: left;">' . (get_option($this->prefix.'-purchased')?'licensed':'unlicensed') . '</div>
-                             </div>
-                             
-                             <div style="clear:left;">
-                               <div style="width:150px; float:left; text-align: right;
-                                   padding-right: 6px;">WPCSL Version:</div>
-                               <div style="float: left;">' . WPCSL__mpebay__VERSION . '
-                               </div>
-                             </div>
-                             <div style="clear:left;">
-                               <div style="width:150px; float:left; text-align: right;
-                                   padding-right: 6px;">WordPress Version:</div>
-                               <div style="float: left;">' . $GLOBALS['wp_version'] . '
-                               </div>
-                             </div>
-                             <div style="clear:left;">
-                               <div style="width:150px; float:left; text-align: right;
-                                   padding-right: 6px;">MySQL Version:</div>
-                               <div style="float: left;">' . $wpdb->db_version() . '
-                               </div>
-                             </div>
-                             <div style="clear:left;">
-                               <div style="width:150px; float:left; text-align: right;
-                                   padding-right: 6px;">PHP Version:</div>
-                               <div style="float: left;">' . phpversion() .'</div>
-                             </div>
-                             <div style="clear:left;">
-                               <div style="width:150px; float:left; text-align: right;
-                                   padding-right: 6px;">PHP Modules:</div>
-                               <div style="float: left;">' .
-                                 implode('<br/>',$this->csl_php_modules) . '
-                               </div>
-                             </div>
-                             <div style="clear:left;">&nbsp;</div>
-                           </div>
-                         </p>',
-                    'auto' => false,
-                    'start_collapsed' => true
-                )
-            );
+        if (isset($this->parent) && (is_admin() && $this->parent->isOurAdminPage)) {
+            
+            // Only show the license section if the plugin settings
+            // wants a license module
+            if (!$this->no_license) {
+                $this->license_section_title = 'Plugin License';
+                $this->add_section(array(
+                        'name' => $this->license_section_title,
+                        'description' => "<p>To obtain a key, please purchase this plugin " .
+                            "from <a href=\"{$this->url}\" target=\"_new\">{$this->url}</a>.</p>",
+                        'auto' => false,
+                        'div_id' => 'csl_license_block'
+                    )
+                );
+                
+            // We don't have a main license but we have paid option
+            // packages
+            } else if ($this->has_packages) {
+                $this->license_section_title = 'Premium Options';
+                $this->add_section(array(
+                        'name' => $this->license_section_title,
+                        'description' => "<h1>{$this->name} has premium options available.</h1>" .
+                            "<p>Visit <a href=\"{$this->url}\" target=\"_new\">{$this->url}</a> to " .
+                            "learn more about the available add-on packages.<br/> After you purchase " .
+                            "an add-on package come back here to activate your add-on packages.</p>",
+                        'auto' => false,
+                        'div_id' => 'csl_license_block'
+                    )
+                );
+            }
     
-            $this->add_item(
-                'Plugin Environment', 
-                'Enable Debugging Output: ',   
-                'debugging',    
-                'checkbox'
-            );
+            // Render CSL Blocks - if set false we don't need this overhead
+            //
+            if ($this->render_csl_blocks) {        
+                $this->csl_php_modules = get_loaded_extensions();
+                natcasesort($this->csl_php_modules);
+                global $wpdb;
+                $this->add_section(
+                    array(
+                        'name' => 'Plugin Environment',
+                        'description' =>
+                            '<p>Here are the technical details about your plugin:<br />
+                               <div style="border: solid 1px #E0E0E0; padding: 6px; margin: 6px;
+                                   background-color: #F4F4F4;">
+
+
+                                 <div style="clear:left;">
+                                   <div style="width:150px; float:left; text-align: right;
+                                       padding-right: 6px;">CSA IP Addresses:</div>
+                                   <div style="float: left;">' . 
+                                        gethostbyname('charlestonsw.com') . 
+                                        ' and ' .  
+                                        gethostbyname('license.charlestonsw.com') . 
+                                    '</div>
+                                 </div>                                
+                                   
+                                 <div style="clear:left;">
+                                   <div style="width:150px; float:left; text-align: right;
+                                       padding-right: 6px;">Active WPCSL:</div>
+                                   <div style="float: left;">' . plugin_dir_path(__FILE__) . '</div>
+                                 </div>                                
+                                 <div style="clear:left;">
+                                   <div style="width:150px; float:left; text-align: right;
+                                       padding-right: 6px;">Site URL:</div>
+                                   <div style="float: left;">' . get_option('siteurl') . '</div>
+                                 </div>
+                                 <div style="clear:left;">
+                                   <div style="width:150px; float:left; text-align: right;
+                                       padding-right: 6px;">Encryption Key:</div>
+                                   <div style="float: left;">' . md5(get_option($this->prefix.'-license_key')) . '</div>
+                                 </div>
+                                 <div style="clear:left;">
+                                   <div style="width:150px; float:left; text-align: right;
+                                       padding-right: 6px;">License Key:</div>
+                                   <div style="float: left;">' . (get_option($this->prefix.'-purchased')?'licensed':'unlicensed') . '</div>
+                                 </div>
+                                 
+                                 <div style="clear:left;">
+                                   <div style="width:150px; float:left; text-align: right;
+                                       padding-right: 6px;">WPCSL Version:</div>
+                                   <div style="float: left;">' . WPCSL__mpebay__VERSION . '
+                                   </div>
+                                 </div>
+                                 <div style="clear:left;">
+                                   <div style="width:150px; float:left; text-align: right;
+                                       padding-right: 6px;">WordPress Version:</div>
+                                   <div style="float: left;">' . $GLOBALS['wp_version'] . '
+                                   </div>
+                                 </div>
+                                 <div style="clear:left;">
+                                   <div style="width:150px; float:left; text-align: right;
+                                       padding-right: 6px;">MySQL Version:</div>
+                                   <div style="float: left;">' . $wpdb->db_version() . '
+                                   </div>
+                                 </div>
+                                 <div style="clear:left;">
+                                   <div style="width:150px; float:left; text-align: right;
+                                       padding-right: 6px;">PHP Version:</div>
+                                   <div style="float: left;">' . phpversion() .'</div>
+                                 </div>
+                                 <div style="clear:left;">
+                                   <div style="width:150px; float:left; text-align: right;
+                                       padding-right: 6px;">PHP Modules:</div>
+                                   <div style="float: left;">' .
+                                     implode('<br/>',$this->csl_php_modules) . '
+                                   </div>
+                                 </div>
+                                 <div style="clear:left;">&nbsp;</div>
+                               </div>
+                             </p>',
+                        'auto' => false,
+                        'start_collapsed' => true
+                    )
+                );
+        
+                $this->add_item(
+                    'Plugin Environment', 
+                    'Enable Debugging Output: ',   
+                    'debugging',    
+                    'checkbox'
+                );
+        
+                $this->add_section(array(
+                        'name' => 'Plugin Info',
+                        'description' => $this->get_broadcast(),
+                        'auto' => false
+                    )
+                );
+            }
+        }       
+    }
     
-            $this->add_section(array(
-                    'name' => 'Plugin Info',
-                    'description' =>
-                        '<div class="cybersprocket-cslbox">
-                        <div class="cybersprocket-csllogo">
-                        <a href="http://www.cybersprocket.com/" target="cslinfo"><img src="'. $this->plugin_url .'/images/CSL_banner_logo.png"/></a>
-                         </div>
+    /**------------------------------------
+     ** method: get_broadcast
+     **
+     **/
+     function get_broadcast() {
+         $content = '';
+         
+        // HTTP Handler is not set fail the license check
+        //
+        if (isset($this->http_handler)) { 
+            if ($this->broadcast_url != '') {
+                $result = $this->http_handler->request( 
+                                $this->broadcast_url, 
+                                array('timeout' => 3) 
+                                ); 
+                if ($this->parent->http_result_is_ok($result) ) {
+                    return $result['body'];
+                }
+            }                
+        }         
+        
+        // Return default content
+        //
+        if ($content == '') {
+            return $this->default_broadcast();
+        }
+     }
+     
+    /**------------------------------------
+     ** method: default_broadcast
+     **
+     **/
+     function default_broadcast() {
+         return
+                        '
+                        <div class="cybersprocket-cslbox">
                          <div class="cybersprocket-cslinfo">
-                         <h4>This plugin has been brought to you by <a href="http://www.cybersprocket.com"
-                                target="_new">Cyber Sprocket Labs</a></h4>
-                         <p>Cyber Sprocket Labs is a custom software development company.  
-                            We develop desktop, mobile, and web applications for clients large and small  
+                         <h4>This plugin has been brought to you by <a href="http://www.charlestonsw.com"
+                                target="_new">Charleston Software Associates</a></h4>
+                         <p>We develop desktop, mobile, and web applications for clients large and small  
                             from all around the world. We hope our plugin brings you closer to the perfect site.
                             If there is anything we can do to improve our work or if you wish to hire us to customize
                             this plugin please call our Charleston South Carolina headquarters or 
-                            <a href="http://www.cybersprocket.com/contact-us/" target="cyber-sprocket-labs">email us</a>
-                            and let us know.<br/>
-                            <br>
-                            <strong>Cyber Sprocket Is...</strong><br/>
-                            Lance Cleveland, Paul Grimes, Chris Rasys, Lobby Jones, Seth Hayward<br/>
-                            <br/>
-                            <strong>For more information:</strong><br/>
-                            <a href="http://www.cybersprocket.com" target="cyber-sprocket-labs">Please visit our website at www.cybersprocket.com</a>.<br/>
+                            <a href="http://www.charlestonsw.com/mindset/contact-us/" target="csa">email us</a>
+                            and let us know.
                          </p>
                          </div>
                          </div>
-                         ',
-                    'auto' => false
-                )
-            );
-        }       
-    }
+                         ' ;    
+     }
+    
 
     /**------------------------------------
      ** method: add_section
@@ -188,6 +239,25 @@ class wpCSL_settings__mpebay {
             );
         }            
     }
+    
+
+    /**------------------------------------
+     ** method: get_item
+     **
+     ** Return the value of a WordPress option that was saved via the settings interface.
+     **/
+    function get_item($name, $default = null, $separator='-') {
+        $option_name = $this->prefix . $separator . $name;
+        if (!isset($this->$option_name)) {            
+            $this->$option_name =
+                ($default == null) ?
+                    get_option($option_name) :
+                    get_option($option_name,$default)
+                    ;
+        }
+        return $this->$option_name;
+    }
+    
 
     /**------------------------------------
      ** Class: WPCSL_Settings
@@ -203,15 +273,29 @@ class wpCSL_settings__mpebay {
      **    description (default: null) - this is what shows via the expand/collapse setting
      **    custom (default: null, name/value pair if list
      **    value (default: null), the value to use if not using get_option
+     **    disabled (default: false), show the input but keep it disabled
      **
      **/
     function add_item($section, $display_name, $name, $type = 'text',
             $required = false, $description = null, $custom = null,
-            $value = null
+            $value = null, $disabled = false
             ) {
 
         $name = $this->prefix .'-'.$name;
-    
+
+        //** Need to check the section exists first. **/
+        if (!isset($this->sections[$section])) {
+            if (isset($this->notifications)) {
+                $this->notifications->add_notice(
+                    3,
+                    sprintf(
+                       __('Program Error: section <em>%s</em> not defined.',WPCSL__mpebay__VERSION),
+                       $section
+                       )
+                );
+            }            
+            return;
+        }
         $this->sections[$section]->add_item(
             array(
                 'prefix' => $this->prefix,
@@ -222,7 +306,8 @@ class wpCSL_settings__mpebay {
                 'required' => $required,
                 'description' => $description,
                 'custom' => $custom,
-                'value' => $value
+                'value' => $value,
+                'disabled' => $disabled
             )
         );
 
@@ -240,6 +325,55 @@ class wpCSL_settings__mpebay {
         }
     }
 
+    /**
+     * Add a simple checkbox to the settings array.
+     *
+     * @param string $section - slug for the parent section
+     * @param string $label - text to appear before the setting
+     * @param string $fieldID - the option value field
+     * @param string $description - the help text under the more icon expansion
+     * @param string $value - the default value to use, overrides get-option(name)
+     * @param boolean $disabled - true if the field is disabled
+     */
+    function add_checkbox($section,$label,$fieldID,$description=null,$value=null,$disabled=false) {
+        $this->add_item(
+                $section,
+                $label,
+                $fieldID,
+                'checkbox',
+                false,
+                $description,
+                null,
+                $value,
+                $disabled
+                );
+    }
+
+    /**
+     * Add a simple text input to the settings array.
+     *
+     * @param string $section - slug for the parent section
+     * @param string $label - text to appear before the setting
+     * @param string $fieldID - the option value field
+     * @param string $description - the help text under the more icon expansion
+     * @param string $value - the default value to use, overrides get-option(name)
+     * @param boolean $disabled - true if the field is disabled
+     */
+    function add_input($section,$label,$fieldID,$description=null,$value=null,$disabled=false) {
+        $this->add_item(
+                $section,
+                $label,
+                $fieldID,
+                'text',
+                false,
+                $description,
+                null,
+                $value,
+                $disabled
+                );
+    }
+
+
     /**------------------------------------
      ** Method: register
      ** 
@@ -254,9 +388,11 @@ class wpCSL_settings__mpebay {
             $this->cache->initialize_options();
         }
 
-        foreach ($this->sections as $section) {
-            $section->register($this->prefix);
-        }
+        if (isset($this->sections)) {
+            foreach ($this->sections as $section) {
+                $section->register($this->prefix);
+            }
+        }            
     }
 
     /**------------------------------------
@@ -275,13 +411,21 @@ class wpCSL_settings__mpebay {
             }
         }        
 
+        // Show the plugin environment and info section on every plugin
+        //
+        if ($this->render_csl_blocks) {
+            $this->sections['Plugin Info']->display();
+        }
+
         // Only render license section if plugin settings
         // asks for it
-        if ($this->has_packages || !$this->no_license) {
-            $this->sections[$this->license_section_title]->header();
-            $this->show_plugin_settings();
-            $this->sections[$this->license_section_title]->footer();
-        }
+        if (isset($this->license_section_title) && (isset($this->sections[$this->license_section_title]))) {
+            if ($this->has_packages || !$this->no_license) {
+                $this->sections[$this->license_section_title]->header();
+                $this->show_plugin_settings();
+                $this->sections[$this->license_section_title]->footer();
+            }
+        }            
 
         // Draw each settings section as defined in the plugin config file
         //
@@ -295,7 +439,6 @@ class wpCSL_settings__mpebay {
         //
         if ($this->render_csl_blocks) {
             $this->sections['Plugin Environment']->display();
-            $this->sections['Plugin Info']->display();
         }
         $this->render_javascript();
         $this->footer();
@@ -308,10 +451,12 @@ class wpCSL_settings__mpebay {
      ** should probably be moved over to the licensing submodule
      **/
     function show_plugin_settings() {
+       $theLicenseKey = get_option($this->prefix.'-license_key');
+
        $license_ok =(  (get_option($this->prefix.'-purchased') == '1')   &&
-                      (get_option($this->prefix.'-license_key') != '')            	    	    
-                          );     
-        
+                      ($theLicenseKey != '')
+                          );
+
         // If has_packages is true that means we have an unlicensed product
         // so we don't want to show the license box
         //
@@ -323,18 +468,22 @@ class wpCSL_settings__mpebay {
                 ((!$license_ok) ?
                     "name=\"{$this->prefix}-license_key\"" :
                     '') .
-                " value=\"". get_option($this->prefix.'-license_key') .
+                " value=\"". $theLicenseKey .
                 "\"". ($license_ok?'disabled' :'') .
                 " />";
-    
+
             if ($license_ok) {
-                $content .= "<input type=\"hidden\" name=\"{$this->prefix}-license_key\" value=\"".
-                    get_option($this->prefix.'-license_key')."\"/>";
-                $content .= '<span><img src="'. $this->plugin_url .
-                    '/images/check_green.png" border="0" style="padding-left: 5px;" ' .
-                    'alt="License validated!" title="License validated!"></span>';
+                $content .=
+                    '<p class="slp_license_info">'.$theLicenseKey.'</p>'        .
+                    '<input type="hidden" name="'.$this->prefix.'-license_key" '.
+                        'value="'.$theLicenseKey.'"/>'                          .
+                    '<span><img src="'. $this->plugin_url                       .
+                              '/images/check_green.png" border="0" '            .
+                              'style="padding-left: 5px;" '                     .
+                              'alt="License validated!" '                       .
+                              'title="License validated!"></span>'              ;
             }
-            
+
             $content .= (!$license_ok) ?
                 ('<span><font color="red"><br/>Without a license key, this plugin will ' .
                     'only function for Admins</font></span>') :
@@ -343,54 +492,63 @@ class wpCSL_settings__mpebay {
                         !get_option($this->prefix.'-purchased')) ?
                 ('<span><font color="red">Your license key could not be verified</font></span>') :
                 '';
-    
+
             if (!$license_ok) {
                 $content .= $this->MakePayPalButton($this->paypal_button_id);
             }
-            
+
             $content .= '<div id="prodsku">sku: ';
             if (isset($this->sku) && ($this->sku != '')) {
                 $content .= $this->sku;
             } else {
-                $content .= 'not set';            
-            }        
+                $content .= 'not set';
+            }
             $content .= '</div>';
-            
 
-            
+
+
         // If we are using has_packages we need to seed our content string
         //
         } else {
             $content ='';
-        }            
-      
-        // List the packages
-        //
-        if (isset($this->parent->license->packages) && ($this->parent->license->packages > 0)) {
-            $content .='<tr><td colspan="2" class="optionpack_topline">'.
-            __('The following optional add-ons are available',WPCSL__mpebay__VERSION).':</td></tr>';
-            $content .= '<tr valign="top">';
-            foreach ($this->parent->license->packages as $package) {
-                $content .= '<th class="input_label optionpack">'.$package->name.'</th>';
-                $content .= '<td class="optionpack">'.$this->EnabledOrBuymeString($license_ok,$package).'</td>';
-            }
-
-            $content .= '</tr>';
         }
-        
+
+        // List Packages
+        //
+        $content .= $this->ListThePackages($license_ok);
+
         // If the main product or packages show the license box
         // Then show a save button here
         //
        $license_ok =(  (get_option($this->prefix.'-purchased') == '1')   &&
-                      (get_option($this->prefix.'-license_key') != '')            	    	    
-                          );            
+                      (get_option($this->prefix.'-license_key') != '')
+                          );
         if (!$license_ok) {
             $content .= '<tr><td colspan="2">' .
                 $this->generate_save_button_string().
                 '</td></tr>';
         }
 
-        echo $content;                
+        echo $content;
+    }
+
+
+    /**
+     * Create the package license otuput for the admin interface.
+     */
+    function ListThePackages($license_ok = false) {
+        $content = '';
+        if (isset($this->parent->license->packages) && ($this->parent->license->packages > 0)) {
+            $content .= '<tr valign="top"><td class="optionpack" colspan="2">';
+            foreach ($this->parent->license->packages as $package) {
+                $content .= '<div class="optionpack_box" id="pack_'.$package->sku.'">';
+                $content .= '<div class="optionpack_name">'.$package->name.'</div>';
+                $content .= '<div class="optionpack_info">'.$this->EnabledOrBuymeString($license_ok,$package).'</div>';
+                $content .= '</div>';
+            }
+            $content .= '</td></tr>';
+        }
+        return $content;
     }
     
     /**------------------------------------
@@ -399,63 +557,75 @@ class wpCSL_settings__mpebay {
      **/
     function EnabledOrBuymeString($mainlicenseOK, $package) {
         $content = '';
-        
+
         // If the main product is licensed or we want to force
-        // the packages list, show the checkbox or buy/validate button. 
+        // the packages list, show the checkbox or buy/validate button.
         //
         if ($mainlicenseOK || $this->has_packages) {
-            
+
             // Check if package is licensed now.
             //
 
-            $package->isenabled =
-                $package->parent->check_license_key(
-                    $package->sku,
-                    true,
-                    ($this->has_packages ? $package->license_key : '')
+            $package->isenabled = (
+
+                    $package->force_enabled ||
+
+                    $package->parent->check_license_key(
+                        $package->sku,
+                        true,
+                        ($this->has_packages ? $package->license_key : ''),
+                        true // Force a server check
+                    )
                 );
 
-            $installed_version = get_option($this->prefix.'-'.$package->sku.'-version');
+            $installed_version = (isset($package->force_version)?
+                        $package->force_version :
+                        get_option($this->prefix.'-'.$package->sku.'-version')
+                        );
             $latest_version = get_option($this->prefix.'-'.$package->sku.'-latest-version');
 
             // Upgrade is available if the current package version < the latest available
             // -AND- the current package version is has been set
             $upgrade_available = (
-                        ($installed_version != '') &&                
+                        ($installed_version != '') &&
                         (   get_option($this->prefix.'-'.$package->sku.'-version-numeric') <
                             get_option($this->prefix.'-'.$package->sku.'-latest-version-numeric')
-                        )                        
+                        )
                     );
 
             // Package is enabled, just show that
             //
-            if ($package->isenabled) {
+            if ($package->isenabled && ($package->license_key != '')) {
                 $packString = $package->name . ' is enabled!';
 
                 $content .=
-                    '<div><img src="'. $this->plugin_url .
+                    '<div class="csl_info_package_license">'.
+                    (($package->sku!='')?'SKU: '.$package->sku.'<br/>':'').
+                    (($package->license_key!='')?'License Key: '.$package->license_key.'<br/>':'').
+                    '<img src="'. $this->plugin_url .
                     '/images/check_green.png" border="0" style="padding-left: 5px;" ' .
                     'alt="'.$packString.'" title="'.$packString.'">' .
-                    'Version ' . $installed_version .'</div>'.
+                    (($installed_version != '')?'Version: ' . $installed_version : '') .
+                    '</div>'.
                     '<input type="hidden" '.
                             'name="'.$package->lk_option_name.'" '.
                             ' value="'.$package->license_key.'" '.
                             ' />';
                     ;
-                    
+
                 // OK - the license was verified, this package is valid
                 // but the mainlicense was not set...
                 // go set it.
                 if (!$mainlicenseOK && ($package->license_key != '')) {
-                    update_option($this->prefix.'-purchased',true);   
+                    update_option($this->prefix.'-purchased',true);
                     update_option($this->prefix.'-license_key',$package->license_key);
-                }                      
-                    
+                }
+
             // Package not enabled, show buy button
             //
             }
 
-            if (!$package->isenabled || $upgrade_available) {
+            if (!$package->isenabled || $upgrade_available || ($package->license_key == '')) {
                 if ($package->isenabled && $upgrade_available) {
                     $content .= '<b>There is a new version available: ' . $latest_version . '</b><br>';
                     $content .= $this->MakePayPalButton($package->paypal_upgrade_button_id, $package->help_text);
@@ -466,29 +636,32 @@ class wpCSL_settings__mpebay {
 
                 // Show license entry box if we need to
                 //
-                if ($this->has_packages && !$upgrade_available) {
+                if (
+                        ($this->has_packages && !$upgrade_available) ||
+                        ($package->license_key == '')
+                    ){
                     $content .= "{$package->sku} Activation Key: <input type='text' ".
                             "name='{$package->lk_option_name}'" .
                             " value='' ".
-                            " />";                     
+                            " />";
                     if ($package->license_key != '') {
-                        $content .= 
+                        $content .=
                             "<br/><span class='csl_info'>".
                             "The key {$package->license_key} could not be validated.".
                             "</span>";
                     }
                 }
             }
-            
+
         // Main product not licensed, tell them.
         //
         } else {
             $content .= '<span>You must license the product before you can purchase add-on packages.</span>';
         }
-        
+
         return $content;
     }
-    
+
     /**------------------------------------
      ** method: MakePayPalButton
      **
@@ -500,8 +673,8 @@ class wpCSL_settings__mpebay {
         if ($helptext == '') {
             $helptext = 'Your license key is emailed within minutes of your purchase.<br/>'. 
                   'If you do not receive your license check your spam '.
-                     'folder then <a href="http://www.cybersprocket.com/contact-us/" '.
-                     'target="Cyber Sprocket">Contact us</a>.';
+                     'folder then <a href="http://www.charlestonsw.com/mindsetcontact-us/" '.
+                     'target="csa">Contact us</a>.';
         }
         
         // PayPal Form String
@@ -544,7 +717,7 @@ class wpCSL_settings__mpebay {
      **/
     function header() {
         echo "<div class='wrap'>\n";
-        screen_icon(preg_replace('/\s/','_',$this->name));
+        screen_icon(preg_replace('/\W/','_',$this->name));
         echo "<h2>{$this->name}</h2>\n";
         echo "<form method='post' action='".$this->form_action."'>\n";
         echo settings_fields($this->prefix.'-settings');
@@ -636,10 +809,11 @@ class wpCSL_settings_section__mpebay {
     /**------------------------------------
      **/
     function __construct($params) {
+        $this->headerbar = true;        
         foreach ($params as $name => $value) {
             $this->$name = $value;
         }
-
+        
         if (!isset($this->auto)) $this->auto = true;
     }
 
@@ -685,13 +859,17 @@ class wpCSL_settings_section__mpebay {
     /**------------------------------------
      **/
     function header() {
-        echo "<div class=\"postbox\" " . (isset($this->div_id) ?  "id='$this->div_id'" : '') . ">
-         <div class=\"handlediv\" title=\"Click to toggle\"><br/></div>
-         <h3 class=\"hndle\">
-           <span>{$this->name}</span>
-           <a name=\"".strtolower(strtr($this->name, ' ', '_'))."\"></a>
-         </h3>
-         <div class=\"inside\" " . (isset($this->start_collapsed) && $this->start_collapsed ? 'style="display:none;"' : '') . ">
+        echo "<div class=\"postbox\" " . (isset($this->div_id) ?  "id='$this->div_id'" : '') . ">";
+        
+        if ($this->headerbar) {
+            echo "<div class=\"handlediv\" title=\"Click to toggle\"><br/></div>
+             <h3 class=\"hndle\">
+               <span>{$this->name}</span>
+               <a name=\"".strtolower(strtr($this->name, ' ', '_'))."\"></a>
+             </h3>";
+        }             
+         
+         echo"<div class=\"inside\" " . (isset($this->start_collapsed) && $this->start_collapsed ? 'style="display:none;"' : '') . ">
             <div class='section_description'>{$this->description}</div>
     <table class=\"form-table\" style=\"margin-top: 0pt;\">\n";
 
@@ -742,21 +920,27 @@ class wpCSL_settings_item__mpebay {
         }
         $showThis = htmlspecialchars($showThis);
         
-        echo '<div class="'.$this->css_prefix.'-input">';
+        echo '<div class="'.$this->css_prefix.'-input'.($this->disabled?'-disabled':'').'">';
         
         switch ($this->type) {
             case 'textarea':
-                echo "<textarea name=\"{$this->name}\" cols=\"50\" rows=\"5\">".
-                    $showThis ."</textarea>";
+                echo '<textarea name="'.$this->name.'" '.
+                    'cols="50" '.
+                    'rows="5" '.
+                    ($this->disabled?'disabled="disabled" ':'').
+                    '>'.$showThis .'</textarea>';
                 break;
 
             case 'text':
-                echo "<input type=\"text\" name=\"{$this->name}\" value=\"". $showThis ."\" />";
+                echo '<input type="text" name="'.$this->name.'" '.
+                    ($this->disabled?'disabled="disabled" ':'').                
+                    'value="'. $showThis .'" />';
                 break;
 
             case "checkbox":
-                echo "<input type=\"checkbox\" name=\"{$this->name}\"".
-                    (($showThis) ? ' checked' : '').">";
+                echo '<input type="checkbox" name="'.$this->name.'" '.
+                    ($this->disabled?'disabled="disabled" ':'').                
+                    ($showThis?' checked' : '').'>';
                 break;
 
             case "list":
@@ -823,7 +1007,7 @@ class wpCSL_settings_item__mpebay {
     /**------------------------------------
      **/
     function header() {
-        echo "<tr><th class='input_label' scope='row'>" .
+        echo "<tr><th class='input_label".($this->disabled?'-disabled':'')."' scope='row'>" .
         "<a name='" .
         strtolower(strtr($this->display_name, ' ', '_')).
             "'></a>{$this->display_name}".

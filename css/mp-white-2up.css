@@ -30,6 +30,7 @@ div.csl_themes-product div.csl_themes-left div.csl_themes-zoombox {
     cursor: pointer;  
     margin: 0px;
     padding: 0px;
+    overflow: hidden;
 } 
 div.csl_themes-zoombox a.thickbox {
     padding: 0px 5px;

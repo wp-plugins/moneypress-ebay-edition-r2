@@ -91,7 +91,7 @@ function setup_admin_interface_for_mpebay() {
     
     $MP_ebay_plugin->settings->add_item('Affiliate Settings', 'Network ID', 
                                         'affiliate_info=>network_id', 'list', false,
-                                      '<p>Specificies your tracking parnter for affiliate commissions.  This field is ' .
+                                      '<p>Specifies your tracking parnter for affiliate commissions.  This field is ' .
                                       'required if you provide a tracking ID.  For example, if you sign up at the ' .
                                       '<a href="https://www.ebaypartnernetwork.com/files/hub/en-US/index.html">eBay ' .
                                       'Partner Network</a> you will receive a confirmation email in a few days with ' .
@@ -113,9 +113,9 @@ function setup_admin_interface_for_mpebay() {
                                       'this may be called your campaign ID or affiliate ID.');    
 
     //-------------------------------------------------------
-    // Plus Version : Show Plus Settings Tab and Sidebar Menu
+    // Pro Version : Show Pro Settings Tab and Sidebar Menu
     //
-    if ($MP_ebay_plugin->license->packages['Plus Pack']->isenabled_after_forcing_recheck()) {                
+    if ($MP_ebay_plugin->license->packages['Pro Pack']->isenabled_after_forcing_recheck()) {
         $MP_ebay_plugin->settings->add_item(
             __('Primary Settings',MP_EBAY_PREFIX),
             __('Search Descriptions',MP_EBAY_PREFIX),
@@ -202,7 +202,7 @@ function setup_admin_interface_for_mpebay() {
  **/
 function setup_stylesheet_for_mpebay() {
     global $MP_ebay_plugin;
-    $MP_ebay_plugin->themes->assign_user_stylesheet();    
+    $MP_ebay_plugin->themes->assign_user_stylesheet('',true);
 }
 
 /**************************************
@@ -218,21 +218,7 @@ function setup_ADMIN_stylesheet_for_mpebay() {
 }
 
 
-/**************************************
- ** function: setup_admin_option_pages_for_mpebay
- **
- ** Setup the option pages for the admin interface.
- **/
-function setup_admin_option_pages_for_mpebay() {
-    global $MP_ebay_plugin;     
-    add_submenu_page(
-        'csl-mp-ebay-options',
-        __("Settings: Plus", MP_EBAY_PREFIX), 
-        __("Settings: Plus", MP_EBAY_PREFIX), 
-        'administrator', 
-        MP_EBAY_PLUGINDIR.'/settings_plus.php'
-    );             
- }
+
 
 
 
