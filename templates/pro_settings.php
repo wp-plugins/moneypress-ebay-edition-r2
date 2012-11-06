@@ -74,6 +74,7 @@ if ($MP_ebay_plugin->license->packages['Pro Pack']->isenabled_after_forcing_rech
         // Textboxes with normal names
         //
         $BoxesToHit = array(
+            'custom_css',
             'money_prefix',
             );
         foreach ($BoxesToHit as $JustAnotherBox) {
@@ -111,6 +112,20 @@ if ($MP_ebay_plugin->license->packages['Pro Pack']->isenabled_after_forcing_rech
         false,
         __('What character do we put in front of money? (default $)', MP_EBAY_PREFIX)        
         );
+
+    // Custom CSS Field
+    //
+    $ebPlusSettings->add_item(
+            'Display Settings',
+            __('Custom CSS',MP_EBAY_PREFIX),
+            'custom_css',
+            'textarea',
+            false,
+            __('Enter your custom CSS, preferably for styling this plugin only but it can be used for any page element as this will go in your page header.',MP_EBAY_PREFIX),
+            null,
+            null,
+            !$this->parent->license->packages['Pro Pack']->isenabled
+            );
 
 } else {
 

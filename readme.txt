@@ -5,7 +5,7 @@ Donate Link: http://www.charlestonsw.com/product/moneypress-ebay-edition/
 Tags: plugin,post,page,ebay,affiliate,store
 Requires at least: 3.1
 Tested up to: 3.4.2
-Stable tag: 2.1.6
+Stable tag: 2.2
 
 This plugin allows you to display eBay listings on your web site by placing a simple shortcode in your page or post. Filter results by keyword, seller ID, or a combination of both.
 
@@ -92,6 +92,10 @@ PHP 5.2 or later with support for cURL and SimpleXML.
 9. Product Logo
 
 == Changelog ==
+
+= v2.2 (November 2012) =
+
+* [Pro Pack](http://www.charlestonsw.com/product/moneypress-ebay-pro-pack/) Add admin based CSS editor, make it easy to over-ride CSS for plugin.
 
 = v2.1.6 (October 2012) = 
 

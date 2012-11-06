@@ -49,9 +49,7 @@ class wpCSL_helper__mpebay {
         if (file_exists($file)) {
             ob_start();
             include($file);
-            $content = ob_get_contents();
-            ob_end_clean();
-            return $content;
+            return ob_get_clean();
         }
     }
     
@@ -76,6 +74,7 @@ class wpCSL_helper__mpebay {
     
     
     
+
     /**
      * Convert text in the WP readme file format (wiki markup) to basic HTML
      *
@@ -91,15 +90,16 @@ class wpCSL_helper__mpebay {
         include($dir.$file);
         $content=ob_get_contents();
         ob_end_clean();
-        $content=ereg_replace("\=\=\= ", "<h2>", $content);
-        $content=ereg_replace(" \=\=\=", "</h2>", $content);
-        $content=ereg_replace("\=\= ", "<div id='wphead' style='color:white'><h1 id='site-heading'><span id='site-title'>", $content);
-        $content=ereg_replace(" \=\=", "</h1></span></div>", $content);
-        $content=ereg_replace("\= ", "<b><u>", $content);
-        $content=ereg_replace(" \=", "</u></b>", $content);
+        $content=preg_replace('#\=\=\= #', "<h2>", $content);
+        $content=preg_replace('# \=\=\=#', "</h2>", $content);
+        $content=preg_replace('#\=\= #', "<div id='wphead' style='color:white'><h1 id='site-heading'><span id='site-title'>", $content);
+        $content=preg_replace('# \=\=#', "</h1></span></div>", $content);
+        $content=preg_replace('#\= #', "<b><u>", $content);
+        $content=preg_replace('# \=#', "</u></b>", $content);
         $content=do_hyperlink($content);
         return nl2br($content);
-    }    
+    }
+ 
 
 
 

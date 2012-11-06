@@ -77,6 +77,19 @@ if (! class_exists('MPEBY_Actions')) {
                 array($this->parent->AdminUI,'pro_options')
             );
         }
+
+        /**
+         * Called when the <head> tags are rendered.
+         */
+        function wp_head() {
+            if (!$this->setParent()) { return; }
+            $output = strip_tags($this->parent->settings->get_item('custom_css',''));
+            if ($output != '') {
+                echo '<!-- MP eBay Custom CSS -->'."\n".'<style type="text/css">'."\n" . $output . '</style>'."\n\n";
+            }
+        }
+
+
     }
 }
 ?>

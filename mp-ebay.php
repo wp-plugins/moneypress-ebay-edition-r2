@@ -3,7 +3,7 @@
   Plugin Name: MoneyPress : eBay Edition
   Plugin URI: http://www.charlestonsw.com/product/moneypress-ebay-edition/
   Description: This plugin allows you to display eBay listings on your web site by placing a simple shortcode in your page or post.
-  Version: 2.1.6
+  Version: 2.2
   Author: Charleston Software Associates
   Author URI: http://www.charlestonsw.com
   License: GPL3
@@ -62,8 +62,9 @@ require_once(MP_EBAY_PLUGINDIR . '/include/actions_class.php');
 $MP_ebay_plugin->Actions = new MPEBY_Actions(array('parent'=>$MP_ebay_plugin));
 
 // actions
-add_action('wp_print_styles', 'setup_stylesheet_for_mpebay');
-add_action('admin_menu', array($MP_ebay_plugin->Actions,'admin_menu'));
-add_action('admin_print_styles','setup_ADMIN_stylesheet_for_mpebay');
-add_action('admin_init','setup_admin_interface_for_mpebay',10);
+add_action('admin_menu'         , array($MP_ebay_plugin->Actions,'admin_menu'));
+add_action('admin_print_styles' ,'setup_ADMIN_stylesheet_for_mpebay');
+add_action('admin_init'         ,'setup_admin_interface_for_mpebay',10);
+add_action('wp_head'            , array($MP_ebay_plugin->Actions,'wp_head')              );
+add_action('wp_print_styles'    ,'setup_stylesheet_for_mpebay');
 

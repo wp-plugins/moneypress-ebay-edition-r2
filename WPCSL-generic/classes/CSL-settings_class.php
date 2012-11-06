@@ -87,7 +87,7 @@ class wpCSL_settings__mpebay {
 
                                  <div style="clear:left;">
                                    <div style="width:150px; float:left; text-align: right;
-                                       padding-right: 6px;">CSL IP Addresses:</div>
+                                       padding-right: 6px;">CSA IP Addresses:</div>
                                    <div style="float: left;">' . 
                                         gethostbyname('charlestonsw.com') . 
                                         ' and ' .  
@@ -246,8 +246,8 @@ class wpCSL_settings__mpebay {
      **
      ** Return the value of a WordPress option that was saved via the settings interface.
      **/
-    function get_item($name, $default = null) {
-        $option_name = $this->prefix . '-' . $name;
+    function get_item($name, $default = null, $separator='-') {
+        $option_name = $this->prefix . $separator . $name;
         if (!isset($this->$option_name)) {            
             $this->$option_name =
                 ($default == null) ?
@@ -324,6 +324,55 @@ class wpCSL_settings__mpebay {
             }
         }
     }
+
+    /**
+     * Add a simple checkbox to the settings array.
+     *
+     * @param string $section - slug for the parent section
+     * @param string $label - text to appear before the setting
+     * @param string $fieldID - the option value field
+     * @param string $description - the help text under the more icon expansion
+     * @param string $value - the default value to use, overrides get-option(name)
+     * @param boolean $disabled - true if the field is disabled
+     */
+    function add_checkbox($section,$label,$fieldID,$description=null,$value=null,$disabled=false) {
+        $this->add_item(
+                $section,
+                $label,
+                $fieldID,
+                'checkbox',
+                false,
+                $description,
+                null,
+                $value,
+                $disabled
+                );
+    }
+
+    /**
+     * Add a simple text input to the settings array.
+     *
+     * @param string $section - slug for the parent section
+     * @param string $label - text to appear before the setting
+     * @param string $fieldID - the option value field
+     * @param string $description - the help text under the more icon expansion
+     * @param string $value - the default value to use, overrides get-option(name)
+     * @param boolean $disabled - true if the field is disabled
+     */
+    function add_input($section,$label,$fieldID,$description=null,$value=null,$disabled=false) {
+        $this->add_item(
+                $section,
+                $label,
+                $fieldID,
+                'text',
+                false,
+                $description,
+                null,
+                $value,
+                $disabled
+                );
+    }
+
 
     /**------------------------------------
      ** Method: register

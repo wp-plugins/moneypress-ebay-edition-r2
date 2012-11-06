@@ -101,7 +101,7 @@ div.csl-slplus-input textarea {
 
 /* More Info Box */
 div.csl-slplus-moreicon {
-    background: url("../core/images/General_icons16.png")
+    background: url("../images/General_icons16.png")
         no-repeat scroll
         -15px 0px
         transparent;
@@ -179,7 +179,7 @@ a.moreinfo_clicker {
 }
 
 div.icon32 {
-    background: url("../images/icons32.png") no-repeat scroll -72px -5px transparent;    
+    background: url("../images/icons32.png") no-repeat scroll 1px 1px transparent;
 }
 
 
